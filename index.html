@@ -3,62 +3,96 @@
 <head>
 <title>Tcodetech Game</title>
 
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+
 <style>
+html { overflow-y: scroll; }
+
 body {
   margin: 0;
-  background: #666;
-  font-family: Arial;
+  background: linear-gradient(135deg, #1e1e2f, #2c2c54);
+  font-family: 'Poppins', sans-serif;
   color: white;
   text-align: center;
 }
 
-/* TOP */
+#gameWrapper {
+  width: 95vw;
+  max-width: 400px;
+  margin: auto;
+}
+
 #topBar {
   display: flex;
   justify-content: space-between;
-  padding: 10px 30px;
+  padding: 10px 5px;
 }
 
-/* GAME AREA */
+#topBar span {
+  color: #00ffd5;
+  font-weight: 700;
+}
+
 #gameArea {
   position: relative;
-  width: 400px;
-  height: 450px;
-  margin: 40px auto;
-  background: #777;
-  border-radius: 10px;
+  width: 100%;
+  height: 70vh;
+  background: #1f1f3a;
+  border-radius: 15px;
   overflow: hidden;
+  box-shadow: 0 0 20px rgba(0,255,200,0.3);
 }
 
-/* 🔵 BAR (LOWER NOW) */
+#pauseOverlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(6px);
+  background: rgba(0,0,0,0.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+#pauseIcon {
+  font-size: 50px;
+  color: #00ffd5;
+}
+
 #line {
   position: absolute;
-  bottom: 100px; /* ↓ moved down */
-  left: 30px;
-  width: 340px;
+  bottom: 20%;
+  left: 5%;
+  width: 90%;
   height: 10px;
   background: cyan;
 }
 
-/* 🎨 BLOCKS (LOWER) */
 #blocks {
   position: absolute;
-  bottom: 30px; /* ↓ moved down */
-  left: 30px;
+  bottom: 5%;
+  left: 5%;
+  width: 90%;
   display: flex;
 }
 
 .block {
-  width: 85px;
+  flex: 1;
   height: 50px;
+  margin: 3px;
+  border-radius: 10px;
   cursor: pointer;
 }
 
-.selected {
-  outline: 3px solid white;
+.block.disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
-/* BALL */
+.selected { outline: 3px solid #00ffd5; }
+
 .ball {
   width: 18px;
   height: 18px;
@@ -66,27 +100,60 @@ body {
   position: absolute;
 }
 
-/* LEADERBOARD */
-#leaderboard {
-  width: 300px;
-  margin: 20px auto;
-  background: #222;
+.btn {
+  width: 100%;
+  margin: 10px 0;
+  padding: 12px;
+  border-radius: 25px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#toggleBtn { background: linear-gradient(45deg,#00ffd5,#00aaff); }
+#helpBtn { background: #444; color:white; }
+
+.popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 300px;
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
   padding: 15px;
-  border-radius: 10px;
+  border-radius: 15px;
+  display: none;
+  z-index: 3000;
+}
+
+#overlayBg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: none;
+  z-index: 2000;
+  pointer-events: none;
 }
 
 .item {
   display: flex;
   justify-content: space-between;
-  background: #333;
-  margin: 5px;
-  padding: 8px;
-  border-radius: 6px;
+  margin: 6px 0;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.1);
 }
 </style>
 </head>
 
 <body>
+
+<div id="gameWrapper">
 
 <div id="topBar">
   <div>Score: <span id="score">0</span></div>
@@ -94,6 +161,7 @@ body {
 </div>
 
 <div id="gameArea">
+  <div id="pauseOverlay"><div id="pauseIcon">⏸</div></div>
 
   <div id="line"></div>
 
@@ -103,131 +171,318 @@ body {
     <div class="block" style="background: green;"></div>
     <div class="block" style="background: pink;"></div>
   </div>
+</div>
+
+<button id="toggleBtn" class="btn">🏆 Leaderboard</button>
+<button id="helpBtn" class="btn">❓ Help</button>
 
 </div>
 
-<div id="leaderboard">
+<div id="overlayBg"></div>
+
+<div id="leaderboard" class="popup">
   <h3>Leaderboard</h3>
   <div id="list"></div>
+  <button class="btn" id="closeLeaderboard">❌ Close</button>
+</div>
+
+<!-- GAME OVER -->
+<div id="gameOverPopup" class="popup">
+  <h3>Game Over</h3>
+  <p>Score: <span id="finalScore"></span></p>
+
+  <div id="newHigh" style="display:none;font-weight:700;
+  color:#00ffd5;text-shadow:0 0 10px #00ffd5,0 0 20px #00ffd5;">
+  🔥 NEW HIGH SCORE
+  </div>
+
+  <div id="nameBox" style="display:none;position:relative;margin-top:10px;">
+    <input id="playerName" value="Player"
+      style="width:100%; box-sizing:border-box; padding:10px; border-radius:10px;
+      border:none;background:rgba(255,255,255,0.08);
+      backdrop-filter:blur(10px);
+      color:white;text-align:center;outline:none;" />
+
+    <span id="editIcon" style="
+      position:absolute;right:10px;top:50%;
+      transform:translateY(-50%);
+      cursor:pointer;">✏️</span>
+  </div>
+
+  <button class="btn" id="okBtn" style="display:none;">OK</button>
+  <button class="btn" onclick="location.reload()">Restart</button>
+</div>
+
+<div id="helpPopup" class="popup">
+  <h3>How to Play</h3>
+  <p>Tap correct color before ball hits bar</p>
+  <p>Tap screen to pause/resume</p>
+  <button class="btn" id="helpOk">OK</button>
 </div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, push, onValue, get, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyC_Pj3FjqQC_eujcMLa9_a-vYkst0ij5VQ",
-  authDomain: "tcodetech.firebaseapp.com",
-  databaseURL: "https://tcodetech-default-rtdb.firebaseio.com",
-  projectId: "tcodetech"
-};
-
-const app = initializeApp(firebaseConfig);
+const app = initializeApp({ apiKey:"YOUR_API_KEY", databaseURL:"https://tcodetech-default-rtdb.firebaseio.com" });
 const db = getDatabase(app);
 
-// GAME
-let colors = ["yellow","cyan","green","pink"];
-let selected = 0;
-let score = 0;
-let highScore = localStorage.getItem("highScore") || 0;
+let wasPausedBeforePopup = false;
 
-document.getElementById("highScore").innerText = highScore;
+let hits = 0;
+let misses = 0;
 
-const blocks = document.querySelectorAll(".block");
-const line = document.getElementById("line");
-const gameArea = document.getElementById("gameArea");
+let colors=["yellow","cyan","green","pink"];
+let selected=0,score=0,paused=false,globalHighScore=0;
 
-updateSelection();
+let ballIntervals = [];
 
-blocks.forEach((block, index) => {
-  block.onclick = () => {
-    selected = index;
-    updateSelection();
-  };
+const blocks=document.querySelectorAll(".block");
+const gameArea=document.getElementById("gameArea");
+const pauseOverlay=document.getElementById("pauseOverlay");
+const line=document.getElementById("line");
+
+const lb=document.getElementById("leaderboard");
+const toggleBtn=document.getElementById("toggleBtn");
+const helpBtn=document.getElementById("helpBtn");
+
+const overlayBg=document.getElementById("overlayBg");
+
+line.style.background = colors[selected];
+
+blocks.forEach((b,i)=>b.onclick=e=>{
+  if(paused) return;
+  e.stopPropagation();
+  selected=i;
+
+  blocks.forEach(x=>x.classList.remove("selected"));
+  blocks[i].classList.add("selected");
+
+  line.style.background = colors[i];
 });
 
-function updateSelection() {
-  blocks.forEach(b => b.classList.remove("selected"));
-  blocks[selected].classList.add("selected");
-  line.style.background = colors[selected];
+gameArea.onclick=()=>{
+  if(lb.style.display==="block") return;
+
+  paused=!paused;
+  pauseOverlay.style.display=paused?"flex":"none";
+
+  blocks.forEach(b=>b.classList.toggle("disabled", paused));
+};
+
+function getSpeed(){
+
+  let total = hits + misses;
+  let accuracy = total > 0 ? hits / total : 1;
+
+  let base = 2 + score * 0.15;
+
+  if(accuracy > 0.8){
+    base += 2; // player good → faster
+  }
+  else if(accuracy < 0.5){
+    base -= 1; // player struggling → slower
+  }
+
+  return Math.max(2, base); // never too slow
 }
 
-/* 🐢 SMOOTH SPEED (gradual increase) */
-function getSpeed() {
-  return 2 + (score * 0.2); 
-  // starts slow (2) and increases slowly
-}
+function createBall(){
+  if(paused) return;
 
-// BALL
-function createBall() {
+  let ball=document.createElement("div");
+  let c=Math.floor(Math.random()*4);
 
-  let ball = document.createElement("div");
-  let colorIndex = Math.floor(Math.random() * 4);
+  let lineLeft=line.offsetLeft;
+  let lineWidth=line.offsetWidth;
 
-  ball.classList.add("ball");
-  ball.style.background = colors[colorIndex];
+  ball.className="ball";
+  ball.style.background=colors[c];
 
-  let x = Math.random() * (gameArea.clientWidth - 20);
-  ball.style.left = x + "px";
-  ball.style.top = "0px";
+  ball.style.left=(lineLeft + Math.random()*(lineWidth-18))+"px";
+  ball.style.top="0px";
 
   gameArea.appendChild(ball);
 
-  let fall = setInterval(() => {
-    let top = parseFloat(ball.style.top);
-    ball.style.top = top + getSpeed() + "px";
+  let fall=setInterval(()=>{
+    if(paused) return;
 
-    let lineTop = line.offsetTop;
+    let top=parseFloat(ball.style.top);
+    ball.style.top=top+getSpeed()+"px";
 
-    if (top >= lineTop - 10) {
+    let lineTop=line.offsetTop;
+    let ballLeft=ball.offsetLeft;
+
+    if(top>=lineTop-10){
       clearInterval(fall);
 
-      if (colorIndex === selected) {
+      if(ballLeft>=lineLeft && ballLeft<=lineLeft+lineWidth && c===selected){
         score++;
-        document.getElementById("score").innerText = score;
+        hits++;
+        document.getElementById("score").innerText=score;
         ball.remove();
       } else {
+        misses++;
         gameOver();
       }
     }
-  }, 20);
+  },20);
+
+  ballIntervals.push(fall);
+}
+setInterval(createBall,900);
+
+function gameOver(){
+
+  paused=true;
+
+  ballIntervals.forEach(i=>clearInterval(i));
+  ballIntervals=[];
+
+  document.querySelectorAll(".ball").forEach(b=>b.remove());
+
+  document.getElementById("finalScore").innerText=score;
+  document.getElementById("gameOverPopup").style.display="block";
+
+  overlayBg.style.display="block";
+  overlayBg.style.pointerEvents="auto";
+
+  if(score > globalHighScore){
+
+    document.getElementById("newHigh").style.display="block";
+    document.getElementById("nameBox").style.display="block";
+    document.getElementById("okBtn").style.display="block";
+
+    let input = document.getElementById("playerName");
+    let okBtn = document.getElementById("okBtn");
+
+    input.focus();
+
+    document.getElementById("editIcon").onclick = () => {
+      input.focus();
+    };
+
+async function getCountryCode(){
+  try{
+    let res = await fetch("https://ipapi.co/json/");
+    let data = await res.json();
+    return data.country_code || "IN"; // fallback
+  }catch(e){
+    return "IN";
+  }
 }
 
-setInterval(createBall, 900);
+  async function saveScore(){
+  let name = input.value || "Player";
 
-// GAME OVER
-function gameOver() {
-  if (score > highScore) {
-    highScore = score;
-    localStorage.setItem("highScore", highScore);
-    document.getElementById("highScore").innerText = highScore;
+  let country = await getCountryCode(); // 🌍 get country
 
-    let name = prompt("Enter name:");
-    if (!name) name = "Player";
+  // save with country
+  await push(ref(db,"scores"), { name, score, country });
 
-    push(ref(db, "scores"), { name, score: highScore });
+  // keep only top 10 (your existing logic)
+  const snapshot = await get(ref(db,"scores"));
+  if(!snapshot.exists()) return location.reload();
+
+  const data = snapshot.val();
+
+  let arr = Object.entries(data).map(([key, val]) => ({
+    key,
+    ...val
+  }));
+
+  arr.sort((a,b)=>b.score-a.score);
+
+  let toDelete = arr.slice(10);
+
+  for(let item of toDelete){
+    await remove(ref(db, "scores/" + item.key));
   }
 
-  alert("Game Over: " + score);
   location.reload();
 }
 
-// LEADERBOARD
-onValue(ref(db, "scores"), snapshot => {
-  let data = snapshot.val();
-  let html = "";
+    okBtn.onclick = saveScore;
 
-  if (data) {
-    let arr = Object.values(data);
-    arr.sort((a,b) => b.score - a.score);
+    input.onkeydown = (e)=>{
+      if(e.key==="Enter") saveScore();
+    };
+  }
+}
 
-    arr.slice(0,10).forEach((d,i) => {
-      html += `<div class="item">#${i+1} ${d.name} <span>${d.score}</span></div>`;
+onValue(ref(db,"scores"),snap=>{
+  let data=snap.val(),html="";
+  if(data){
+    let arr=Object.values(data).sort((a,b)=>b.score-a.score);
+    globalHighScore=arr[0]?.score||0;
+    document.getElementById("highScore").innerText=globalHighScore;
+
+    arr.slice(0,10).forEach((d,i)=>{
+      let flag = d.country 
+  ? `https://flagcdn.com/24x18/${d.country.toLowerCase()}.png`
+  : "";
+
+html+=`
+<div class="item">
+  <span>
+    #${i+1} 
+    ${flag ? `<img src="${flag}" style="width:20px;vertical-align:middle;margin-right:5px;">` : ""}
+    ${d.name}
+  </span>
+  <span>${d.score}</span>
+</div>`;
     });
   }
+  document.getElementById("list").innerHTML=html;
+});
 
-  document.getElementById("list").innerHTML = html;
+toggleBtn.onclick=()=>{
+  wasPausedBeforePopup = paused; // 🔥 store state
+
+  lb.style.display="block";
+  overlayBg.style.display="block";
+  overlayBg.style.pointerEvents="auto";
+
+  paused = true;
+};
+
+document.getElementById("closeLeaderboard").onclick=()=>{
+  lb.style.display="none";
+  overlayBg.style.display="none";
+  overlayBg.style.pointerEvents="none";
+  paused = wasPausedBeforePopup; // 🔥 restore state
+pauseOverlay.style.display = paused ? "flex" : "none";
+};
+
+helpBtn.onclick=()=>{
+  wasPausedBeforePopup = paused;
+
+  paused=true;
+  overlayBg.style.display="block";
+  overlayBg.style.pointerEvents="auto";
+  document.getElementById("helpPopup").style.display="block";
+};
+
+document.getElementById("helpOk").onclick=()=>{
+  document.getElementById("helpPopup").style.display="none";
+  overlayBg.style.display="none";
+  overlayBg.style.pointerEvents="none";
+
+  paused = wasPausedBeforePopup; // 🔥 restore
+  pauseOverlay.style.display = paused ? "flex" : "none";
+};
+
+document.addEventListener("visibilitychange", () => {
+
+  if (document.hidden) {
+    // 🔴 User left tab → pause game
+    paused = true;
+    pauseOverlay.style.display = "flex";
+
+    blocks.forEach(b => b.classList.add("disabled"));
+  }
+
 });
 
 </script>
