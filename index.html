@@ -155,9 +155,17 @@ body {
 
 <div id="gameWrapper">
 
+
+
 <div id="topBar">
   <div>Score: <span id="score">0</span></div>
-  <div>High Score: <span id="highScore">0</span></div>
+  <div id="highScoreLabel" style="cursor:pointer;">
+      High Score: <span id="highScore">0</span>
+  </div>
+</div>
+
+<div id="adminPanel" style="display:none; font-size:14px; color:#00ffd5;">
+    👑 Online: <span id="onlineCount">0</span>
 </div>
 
 <div id="gameArea">
@@ -224,7 +232,7 @@ body {
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, get, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, push, onValue, get, remove, onDisconnect, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const app = initializeApp({ apiKey:"YOUR_API_KEY", databaseURL:"https://tcodetech-default-rtdb.firebaseio.com" });
 const db = getDatabase(app);
@@ -525,6 +533,50 @@ document.addEventListener("visibilitychange", () => {
   }
 
 });
+
+// 🔥 ADMIN TRIPLE TAP SYSTEM
+
+let tapCount = 0;
+let tapTimer;
+
+const highScoreLabel = document.getElementById("highScoreLabel");
+
+highScoreLabel.onclick = () => {
+  tapCount++;
+
+  clearTimeout(tapTimer);
+
+  tapTimer = setTimeout(() => {
+    tapCount = 0;
+  }, 800);
+
+  if(tapCount === 3){
+    tapCount = 0;
+
+    document.getElementById("adminPanel").style.display = "block";
+
+    startOnlineTracking();
+  }
+};
+
+
+// 🌐 ONLINE TRACKING FUNCTION
+
+function startOnlineTracking(){
+
+  const onlineRef = ref(db, "onlineUsers");
+
+  const userId = Math.random().toString(36).substring(2);
+  const myRef = ref(db, "onlineUsers/" + userId);
+
+  set(myRef, true);
+  onDisconnect(myRef).remove();
+
+  onValue(onlineRef, (snap) => {
+    let count = snap.exists() ? Object.keys(snap.val()).length : 0;
+    document.getElementById("onlineCount").innerText = count;
+  });
+}
 
 </script>
 
