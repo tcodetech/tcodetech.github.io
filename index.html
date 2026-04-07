@@ -232,6 +232,9 @@ let wasPausedBeforePopup = false;
 
 let hits = 0;
 let misses = 0;
+let startTime = Date.now();
+let actions = 0;
+let secret = Math.random().toString(36).substring(2);
 
 let colors=["yellow","cyan","green","pink"];
 let selected=0,score=0,paused=false,globalHighScore=0;
@@ -320,7 +323,12 @@ function createBall(){
       if(ballLeft>=lineLeft && ballLeft<=lineLeft+lineWidth && c===selected){
         score++;
         hits++;
-        document.getElementById("score").innerText=score;
+        actions++;
+
+       // 🔐 update checksum
+       secret = btoa(secret + score + actions);
+
+document.getElementById("score").innerText=score;
         ball.remove();
       } else {
         misses++;
@@ -331,9 +339,41 @@ function createBall(){
 
   ballIntervals.push(fall);
 }
-setInterval(createBall,900);
+function spawnLoop(){
+
+  if(!paused){
+    createBall();
+  }
+
+  // 🤖 dynamic spawn rate
+  let delay = 900 - (score * 20);
+
+  // limit so it doesn't go crazy fast
+  delay = Math.max(250, delay);
+
+  setTimeout(spawnLoop, delay);
+}
+
+// start loop
+spawnLoop();
 
 function gameOver(){
+    let timePlayed = (Date.now() - startTime) / 1000;
+   let speed = score / timePlayed;
+
+  // 🚨 anti cheat
+  if(speed > 8){
+  alert("Cheating detected!");
+  location.reload();
+  return;
+   }
+
+   // 🔐 validation
+   if(secret.length < 20){
+    alert("Invalid score!");
+    location.reload();
+     return;
+   }
 
   paused=true;
 
