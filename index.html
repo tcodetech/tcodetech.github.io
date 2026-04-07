@@ -369,7 +369,7 @@ function gameOver(){
    }
 
    // 🔐 validation
-   if(secret.length < 20){
+   if(actions > 5 && secret.length < 20){
     alert("Invalid score!");
     location.reload();
      return;
