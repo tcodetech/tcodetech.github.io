@@ -197,7 +197,8 @@ body {
   </div>
 
   <div id="nameBox" style="display:none;position:relative;margin-top:10px;">
-    <input id="playerName" value="Player"
+    <input id="playerName" value="Player" maxlength="10"
+      oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')"
       style="width:100%; box-sizing:border-box; padding:10px; border-radius:10px;
       border:none;background:rgba(255,255,255,0.08);
       backdrop-filter:blur(10px);
@@ -414,7 +415,7 @@ async function getCountryCode(){
 }
 
   async function saveScore(){
-  let name = input.value || "Player";
+  let name = input.value.trim().replace(/[^a-zA-Z0-9]/g, '').substring(0, 10) || "Player";
 
   let country = await getCountryCode(); // 🌍 get country
 
