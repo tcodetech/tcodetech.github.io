@@ -11,7 +11,7 @@
 
 <header>
   <h1>⚡ Algorithmic Trading Operations</h1>
-  <p id="connection-status">🟡 Connecting to Samsung A12 Server...</p>
+  <p id="connection-status">🟡 Resolving active Cloudflare URL...</p>
 </header>
 
 <main>
@@ -61,9 +61,10 @@
 </footer>
 
 <script>
-  // Replace this with your active Cloudflare Tunnel URL
-  const API_URL = "https://customize-knowing-productions-naturally.trycloudflare.com/api/bots_summary";
+  // Dynamic link resolver from your repository
+  const TUNNEL_CONFIG_URL = "https://raw.githubusercontent.com/tcodetech/tcodetech.github.io/main/current_tunnel.json";
 
+  let activeApiUrl = null;
   let chartInstance = null;
 
   function initChart() {
@@ -94,26 +95,63 @@
     });
   }
 
-  async function fetchBotData() {
+  // 1. Fetch live active Cloudflare URL dynamically
+  async function resolveActiveTunnelUrl() {
     try {
-      const res = await fetch(API_URL);
+      const res = await fetch(TUNNEL_CONFIG_URL + "?nocache=" + new Date().getTime());
+      if (res.ok) {
+        const config = await res.json();
+        if (config && config.url) {
+          activeApiUrl = config.url.replace(/\/+$/, '') + "/api/bots_summary";
+          document.getElementById('connection-status').textContent = '🟡 Connecting to ' + config.url.replace('https://', '') + '...';
+          return true;
+        }
+      }
+    } catch (e) {
+      console.warn("Resolving tunnel URL...", e);
+    }
+    return false;
+  }
+
+  // 2. Poll Bot Telemetry
+  async function fetchBotData() {
+    if (!activeApiUrl) {
+      const resolved = await resolveActiveTunnelUrl();
+      if (!resolved) {
+        document.getElementById('connection-status').textContent = '🔴 Awaiting Live Tunnel Sync from Termux...';
+        document.getElementById('connection-status').style.color = '#ff4e50';
+        return;
+      }
+    }
+
+    try {
+      const res = await fetch(activeApiUrl);
       const data = await res.json();
       
       document.getElementById('connection-status').textContent = '🟢 Server Online • Telemetry Active';
       document.getElementById('connection-status').style.color = '#38ef7d';
 
-      if (data.v6 && !data.v6.error) {
-        const v6 = data.v6;
-        document.getElementById('v6-badge').textContent = 'RUNNING';
-        document.getElementById('v6-badge').className = 'badge badge-green';
-        document.getElementById('v6-balance').textContent = `$${v6.balance.toFixed(2)}`;
-        
-        const openPnlEl = document.getElementById('v6-open-pnl');
-        openPnlEl.textContent = `${v6.open_pnl >= 0 ? '+' : ''}$${v6.open_pnl.toFixed(2)}`;
-        openPnlEl.style.color = v6.open_pnl >= 0 ? '#38ef7d' : '#ff4e50';
+      const v6Badge = document.getElementById('v6-badge');
 
-        document.getElementById('v6-realized-pnl').textContent = `$${v6.stats.realized_pnl.toFixed(2)}`;
-        document.getElementById('v6-winrate').textContent = `${v6.stats.win_rate}% (${v6.stats.wins}W / ${v6.stats.losses}L)`;
+      if (data.v6 && data.v6.is_running === true) {
+        const v6 = data.v6;
+        v6Badge.textContent = 'RUNNING';
+        v6Badge.className = 'badge badge-green';
+
+        if (v6.balance !== undefined) {
+          document.getElementById('v6-balance').textContent = `$${v6.balance.toFixed(2)}`;
+        }
+        
+        if (v6.open_pnl !== undefined) {
+          const openPnlEl = document.getElementById('v6-open-pnl');
+          openPnlEl.textContent = `${v6.open_pnl >= 0 ? '+' : ''}$${v6.open_pnl.toFixed(2)}`;
+          openPnlEl.style.color = v6.open_pnl >= 0 ? '#38ef7d' : '#ff4e50';
+        }
+
+        if (v6.stats) {
+          document.getElementById('v6-realized-pnl').textContent = `$${v6.stats.realized_pnl.toFixed(2)}`;
+          document.getElementById('v6-winrate').textContent = `${v6.stats.win_rate}% (${v6.stats.wins}W / ${v6.stats.losses}L)`;
+        }
 
         // Update Chart
         if (v6.pnl_history && chartInstance) {
@@ -139,18 +177,25 @@
         } else {
           tradesContainer.innerHTML = '<p style="color: #aaa;">Scanning 15m entries (No active positions)...</p>';
         }
+
       } else {
-        document.getElementById('v6-badge').textContent = 'OFFLINE';
-        document.getElementById('v6-badge').className = 'badge badge-red';
+        v6Badge.textContent = 'OFFLINE';
+        v6Badge.className = 'badge badge-red';
       }
     } catch (e) {
-      document.getElementById('connection-status').textContent = '🔴 Disconnected from A12 Server';
+      activeApiUrl = null; // Re-resolve next cycle if tunnel changed
+      document.getElementById('connection-status').textContent = '🔴 Tunnel Reconnecting...';
       document.getElementById('connection-status').style.color = '#ff4e50';
+      
+      const v6Badge = document.getElementById('v6-badge');
+      v6Badge.textContent = 'OFFLINE';
+      v6Badge.className = 'badge badge-red';
     }
   }
 
-  window.onload = () => {
+  window.onload = async () => {
     initChart();
+    await resolveActiveTunnelUrl();
     fetchBotData();
     setInterval(fetchBotData, 3000);
   };
