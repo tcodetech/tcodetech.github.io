@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TCodeTech | Live Bot Dashboard</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
@@ -14,46 +13,8 @@
   <p id="connection-status">🟡 Resolving active Cloudflare URL...</p>
 </header>
 
-<main>
-
-  <!-- Bot V6 Dashboard Card -->
-  <div class="card bot-card">
-    <div class="card-header">
-      <h2>🤖 4hourbotV6U</h2>
-      <span id="v6-badge" class="badge">Checking...</span>
-    </div>
-
-    <div class="stats-grid">
-      <div class="stat-box">
-        <span class="label">Balance</span>
-        <span class="val" id="v6-balance">$0.00</span>
-      </div>
-      <div class="stat-box">
-        <span class="label">Open PnL</span>
-        <span class="val" id="v6-open-pnl">$0.00</span>
-      </div>
-      <div class="stat-box">
-        <span class="label">Realized PnL</span>
-        <span class="val" id="v6-realized-pnl">$0.00</span>
-      </div>
-      <div class="stat-box">
-        <span class="label">Win Rate</span>
-        <span class="val" id="v6-winrate">0.0%</span>
-      </div>
-    </div>
-
-    <!-- Live PnL Graph -->
-    <div class="chart-container">
-      <canvas id="v6Chart"></canvas>
-    </div>
-
-    <!-- Active Positions -->
-    <h3 style="margin-top: 15px;">Active Positions</h3>
-    <div id="v6-trades" class="trade-list">
-      <p style="color: #bbb;">No active positions.</p>
-    </div>
-  </div>
-
+<main id="bots-container">
+  <p style="color: #8b949e;">Detecting active bots...</p>
 </main>
 
 <footer>
@@ -61,41 +22,9 @@
 </footer>
 
 <script>
-  // Dynamic link resolver from your repository
   const TUNNEL_CONFIG_URL = "https://raw.githubusercontent.com/tcodetech/tcodetech.github.io/main/current_tunnel.json";
-
   let activeApiUrl = null;
-  let chartInstance = null;
 
-  function initChart() {
-    const ctx = document.getElementById('v6Chart').getContext('2d');
-    chartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: Array(20).fill(''),
-        datasets: [{
-          label: 'Rolling Open PnL ($)',
-          data: Array(20).fill(0),
-          borderColor: '#38ef7d',
-          backgroundColor: 'rgba(56, 239, 125, 0.1)',
-          borderWidth: 2,
-          tension: 0.3,
-          fill: true
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { display: false },
-          y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#ccc' } }
-        }
-      }
-    });
-  }
-
-  // 1. Fetch live active Cloudflare URL dynamically
   async function resolveActiveTunnelUrl() {
     try {
       const res = await fetch(TUNNEL_CONFIG_URL + "?nocache=" + new Date().getTime());
@@ -113,7 +42,6 @@
     return false;
   }
 
-  // 2. Poll Bot Telemetry
   async function fetchBotData() {
     if (!activeApiUrl) {
       const resolved = await resolveActiveTunnelUrl();
@@ -131,70 +59,76 @@
       document.getElementById('connection-status').textContent = '🟢 Server Online • Telemetry Active';
       document.getElementById('connection-status').style.color = '#38ef7d';
 
-      const v6Badge = document.getElementById('v6-badge');
+      const container = document.getElementById('bots-container');
 
-      if (data.v6 && data.v6.is_running === true) {
-        const v6 = data.v6;
-        v6Badge.textContent = 'RUNNING';
-        v6Badge.className = 'badge badge-green';
+      if (data.bots && data.bots.length > 0) {
+        container.innerHTML = data.bots.map(bot => {
+          const isRunning = bot.is_running === true;
+          const badgeClass = isRunning ? 'badge-green' : 'badge-red';
+          const badgeText = isRunning ? 'RUNNING' : 'OFFLINE';
+          const openPnl = bot.open_pnl || 0;
+          const pnlColor = openPnl >= 0 ? '#38ef7d' : '#ff4e50';
+          const pnlSign = openPnl >= 0 ? '+' : '';
 
-        if (v6.balance !== undefined) {
-          document.getElementById('v6-balance').textContent = `$${v6.balance.toFixed(2)}`;
-        }
-        
-        if (v6.open_pnl !== undefined) {
-          const openPnlEl = document.getElementById('v6-open-pnl');
-          openPnlEl.textContent = `${v6.open_pnl >= 0 ? '+' : ''}$${v6.open_pnl.toFixed(2)}`;
-          openPnlEl.style.color = v6.open_pnl >= 0 ? '#38ef7d' : '#ff4e50';
-        }
+          const tradesHtml = (bot.trades && bot.trades.length > 0) 
+            ? bot.trades.map(t => `
+                <div class="trade-row">
+                  <div>
+                    <strong>${t.symbol}</strong> <small>(${t.state || 'OPEN'})</small><br>
+                    <small style="color: #bbb;">TP: ${t.tp_pct || 0}% | SL: ${t.sl_pct || 0}%</small>
+                  </div>
+                  <div style="font-weight: bold; color: ${t.pnl >= 0 ? '#38ef7d' : '#ff4e50'}">
+                    ${t.pnl >= 0 ? '+' : ''}$${(t.pnl || 0).toFixed(2)}
+                  </div>
+                </div>
+              `).join('')
+            : '<p style="color: #aaa; margin: 5px 0;">No active positions.</p>';
 
-        if (v6.stats) {
-          document.getElementById('v6-realized-pnl').textContent = `$${v6.stats.realized_pnl.toFixed(2)}`;
-          document.getElementById('v6-winrate').textContent = `${v6.stats.win_rate}% (${v6.stats.wins}W / ${v6.stats.losses}L)`;
-        }
-
-        // Update Chart
-        if (v6.pnl_history && chartInstance) {
-          chartInstance.data.datasets[0].data = v6.pnl_history;
-          chartInstance.data.datasets[0].borderColor = v6.open_pnl >= 0 ? '#38ef7d' : '#ff4e50';
-          chartInstance.update();
-        }
-
-        // Render Positions
-        const tradesContainer = document.getElementById('v6-trades');
-        if (v6.trades && v6.trades.length > 0) {
-          tradesContainer.innerHTML = v6.trades.map(t => `
-            <div class="trade-row">
-              <div>
-                <strong>${t.symbol}</strong> <small>(${t.state})</small><br>
-                <small style="color: #bbb;">TP: ${t.tp_pct}% | SL: ${t.sl_pct}%</small>
+          return `
+            <div class="card bot-card" style="margin-bottom: 20px;">
+              <div class="card-header">
+                <h2>🤖 ${bot.name}</h2>
+                <span class="badge ${badgeClass}">${badgeText}</span>
               </div>
-              <div style="font-weight: bold; color: ${t.pnl >= 0 ? '#38ef7d' : '#ff4e50'}">
-                ${t.pnl >= 0 ? '+' : ''}$${t.pnl.toFixed(2)}
+
+              <div class="stats-grid">
+                <div class="stat-box">
+                  <span class="label">Balance</span>
+                  <span class="val">$${(bot.balance || 0).toFixed(2)}</span>
+                </div>
+                <div class="stat-box">
+                  <span class="label">Open PnL</span>
+                  <span class="val" style="color: ${pnlColor}">${pnlSign}$${openPnl.toFixed(2)}</span>
+                </div>
+                <div class="stat-box">
+                  <span class="label">Realized PnL</span>
+                  <span class="val">$${(bot.stats?.realized_pnl || 0).toFixed(2)}</span>
+                </div>
+                <div class="stat-box">
+                  <span class="label">Win Rate</span>
+                  <span class="val">${bot.stats?.win_rate || 0}% (${bot.stats?.wins || 0}W / ${bot.stats?.losses || 0}L)</span>
+                </div>
+              </div>
+
+              <h3 style="margin-top: 15px;">Active Positions</h3>
+              <div class="trade-list">
+                ${tradesHtml}
               </div>
             </div>
-          `).join('');
-        } else {
-          tradesContainer.innerHTML = '<p style="color: #aaa;">Scanning 15m entries (No active positions)...</p>';
-        }
-
+          `;
+        }).join('');
       } else {
-        v6Badge.textContent = 'OFFLINE';
-        v6Badge.className = 'badge badge-red';
+        container.innerHTML = '<p style="color: #8b949e;">No bot folders found in ~/bot/bots/.</p>';
       }
+
     } catch (e) {
-      activeApiUrl = null; // Re-resolve next cycle if tunnel changed
+      activeApiUrl = null;
       document.getElementById('connection-status').textContent = '🔴 Tunnel Reconnecting...';
       document.getElementById('connection-status').style.color = '#ff4e50';
-      
-      const v6Badge = document.getElementById('v6-badge');
-      v6Badge.textContent = 'OFFLINE';
-      v6Badge.className = 'badge badge-red';
     }
   }
 
   window.onload = async () => {
-    initChart();
     await resolveActiveTunnelUrl();
     fetchBotData();
     setInterval(fetchBotData, 3000);
