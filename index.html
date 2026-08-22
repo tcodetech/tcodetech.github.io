@@ -91,7 +91,6 @@
   async function fetchBotData() {
     let data = null;
 
-    // Direct GitHub API fetch to bypass CORS and CDN cache
     try {
       const res = await fetch("https://api.github.com/repos/tcodetech/tcodetech.github.io/contents/bot_data.json?t=" + Date.now(), {
         headers: { "Accept": "application/vnd.github+json" }
@@ -103,7 +102,6 @@
       }
     } catch(e) {}
 
-    // Raw content fallback
     if (!data) {
       try {
         const res2 = await fetch("https://raw.githubusercontent.com/tcodetech/tcodetech.github.io/main/bot_data.json?t=" + Date.now());
@@ -135,7 +133,7 @@
     if (v6.balance !== undefined) {
       document.getElementById("v6-balance").textContent = "$" + Number(v6.balance).toFixed(2);
     }
-    
+
     if (v6.open_pnl !== undefined) {
       const openPnlEl = document.getElementById("v6-open-pnl");
       openPnlEl.textContent = (v6.open_pnl >= 0 ? "+" : "") + "$" + Number(v6.open_pnl).toFixed(2);
@@ -155,7 +153,11 @@
 
     const tradesContainer = document.getElementById("v6-trades");
     if (v6.trades && v6.trades.length > 0) {
-      tradesContainer.innerHTML = v6.trades.map(t => "<div class="trade-row"><div><strong>" + t.symbol + "</strong> <small>(" + (t.state || "ACTIVE") + ")</small><br><small style="color: #bbb;">TP: " + t.tp_pct + "% | SL: " + t.sl_pct + "%</small></div><div style="font-weight: bold; color: " + (t.pnl >= 0 ? "#38ef7d" : "#ff4e50") + "">" + (t.pnl >= 0 ? "+" : "") + "$" + Number(t.pnl).toFixed(2) + "</div></div>").join("");
+      tradesContainer.innerHTML = v6.trades.map(t => {
+        const color = (t.pnl >= 0) ? "#38ef7d" : "#ff4e50";
+        const sign = (t.pnl >= 0) ? "+" : "";
+        return "<div class="trade-row"><div><strong>" + t.symbol + "</strong> <small>(" + (t.state || "ACTIVE") + ")</small><br><small style="color: #bbb;">TP: " + t.tp_pct + "% | SL: " + t.sl_pct + "%</small></div><div style="font-weight: bold; color: " + color + "">" + sign + "$" + Number(t.pnl).toFixed(2) + "</div></div>";
+      }).join("");
     } else {
       tradesContainer.innerHTML = "<p style="color: #aaa;">Scanning entries (No active positions)...</p>";
     }
