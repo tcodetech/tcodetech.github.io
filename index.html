@@ -11,7 +11,7 @@
 
 <header>
   <h1>⚡ Algorithmic Trading Operations</h1>
-  <p id="connection-status">🟡 Connecting to GitHub telemetry sync...</p>
+  <p id="connection-status">🟡 Reading telemetry stream...</p>
 </header>
 
 <main>
@@ -89,11 +89,11 @@
 
   async function fetchBotData() {
     try {
-      const res = await fetch(GITHUB_DATA_URL + "?nocache=" + new Date().getTime());
+      const res = await fetch(GITHUB_DATA_URL + "?t=" + Date.now());
       if (!res.ok) throw new Error("Fetch error");
       const data = await res.json();
       
-      document.getElementById("connection-status").textContent = "🟢 Cloud Sync Online • Telemetry Active";
+      document.getElementById("connection-status").textContent = "🟢 Telemetry Active (Direct GitHub Sync)";
       document.getElementById("connection-status").style.color = "#38ef7d";
       const v6Badge = document.getElementById("v6-badge");
 
@@ -128,7 +128,7 @@
         v6Badge.className = "badge badge-red";
       }
     } catch (e) {
-      document.getElementById("connection-status").textContent = "🟡 Syncing with GitHub storage...";
+      document.getElementById("connection-status").textContent = "🟡 Connecting to data stream...";
       document.getElementById("connection-status").style.color = "#e3b341";
     }
   }
