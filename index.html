@@ -11,7 +11,7 @@
 
 <header>
   <h1>⚡ Algorithmic Trading Operations</h1>
-  <p id="connection-status">🟡 Reading telemetry stream...</p>
+  <p id="connection-status">🟡 Initializing stream...</p>
 </header>
 
 <main>
@@ -52,21 +52,22 @@
 </main>
 
 <footer>
-  <p>© 2026 TCodeTech • Auto-refreshing every 5s</p>
+  <p>© 2026 TCodeTech • Auto-refreshing every 3s</p>
 </footer>
 
 <script>
-  const GITHUB_DATA_URL = "https://raw.githubusercontent.com/tcodetech/tcodetech.github.io/main/bot_data.json";
   let chartInstance = null;
 
   function initChart() {
-    const ctx = document.getElementById("v6Chart").getContext("2d");
+    const canvas = document.getElementById("v6Chart");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
     chartInstance = new Chart(ctx, {
       type: "line",
       data: {
         labels: Array(20).fill(""),
         datasets: [{
-          label: "Rolling Open PnL ($)",
+          label: "PnL ($)",
           data: Array(20).fill(0),
           borderColor: "#38ef7d",
           backgroundColor: "rgba(56, 239, 125, 0.1)",
@@ -88,55 +89,82 @@
   }
 
   async function fetchBotData() {
+    let data = null;
+
+    // Direct GitHub API fetch to bypass CORS and CDN cache
     try {
-      const res = await fetch(GITHUB_DATA_URL + "?t=" + Date.now());
-      if (!res.ok) throw new Error("Fetch error");
-      const data = await res.json();
-      
-      document.getElementById("connection-status").textContent = "🟢 Telemetry Active (Direct GitHub Sync)";
-      document.getElementById("connection-status").style.color = "#38ef7d";
-      const v6Badge = document.getElementById("v6-badge");
-
-      if (data.v6 && data.v6.is_running === true) {
-        const v6 = data.v6;
-        v6Badge.textContent = "RUNNING";
-        v6Badge.className = "badge badge-green";
-
-        if (v6.balance !== undefined) document.getElementById("v6-balance").textContent = "$" + Number(v6.balance).toFixed(2);
-        if (v6.open_pnl !== undefined) {
-          const openPnlEl = document.getElementById("v6-open-pnl");
-          openPnlEl.textContent = (v6.open_pnl >= 0 ? "+" : "") + "$" + Number(v6.open_pnl).toFixed(2);
-          openPnlEl.style.color = v6.open_pnl >= 0 ? "#38ef7d" : "#ff4e50";
-        }
-        if (v6.stats) {
-          document.getElementById("v6-realized-pnl").textContent = "$" + Number(v6.stats.realized_pnl).toFixed(2);
-          document.getElementById("v6-winrate").textContent = v6.stats.win_rate + "% (" + v6.stats.wins + "W / " + v6.stats.losses + "L)";
-        }
-        if (v6.pnl_history && chartInstance) {
-          chartInstance.data.datasets[0].data = v6.pnl_history;
-          chartInstance.data.datasets[0].borderColor = v6.open_pnl >= 0 ? "#38ef7d" : "#ff4e50";
-          chartInstance.update();
-        }
-        const tradesContainer = document.getElementById("v6-trades");
-        if (v6.trades && v6.trades.length > 0) {
-          tradesContainer.innerHTML = v6.trades.map(t => "<div class="trade-row"><div><strong>" + t.symbol + "</strong> <small>(" + t.state + ")</small><br><small style="color: #bbb;">TP: " + t.tp_pct + "% | SL: " + t.sl_pct + "%</small></div><div style="font-weight: bold; color: " + (t.pnl >= 0 ? "#38ef7d" : "#ff4e50") + "">" + (t.pnl >= 0 ? "+" : "") + "$" + Number(t.pnl).toFixed(2) + "</div></div>").join("");
-        } else {
-          tradesContainer.innerHTML = "<p style="color: #aaa;">Scanning entries (No active positions)...</p>";
-        }
-      } else {
-        v6Badge.textContent = "OFFLINE";
-        v6Badge.className = "badge badge-red";
+      const res = await fetch("https://api.github.com/repos/tcodetech/tcodetech.github.io/contents/bot_data.json?t=" + Date.now(), {
+        headers: { "Accept": "application/vnd.github+json" }
+      });
+      if (res.ok) {
+        const jsonPayload = await res.json();
+        const decoded = atob(jsonPayload.content.replace(/\s/g, ""));
+        data = JSON.parse(decoded);
       }
-    } catch (e) {
+    } catch(e) {}
+
+    // Raw content fallback
+    if (!data) {
+      try {
+        const res2 = await fetch("https://raw.githubusercontent.com/tcodetech/tcodetech.github.io/main/bot_data.json?t=" + Date.now());
+        if (res2.ok) data = await res2.json();
+      } catch(e) {}
+    }
+
+    if (!data || !data.v6) {
       document.getElementById("connection-status").textContent = "🟡 Connecting to data stream...";
       document.getElementById("connection-status").style.color = "#e3b341";
+      return;
+    }
+
+    const v6 = data.v6;
+    const statusEl = document.getElementById("connection-status");
+    const v6Badge = document.getElementById("v6-badge");
+
+    statusEl.textContent = "🟢 Live Stream Connected";
+    statusEl.style.color = "#38ef7d";
+
+    if (v6.is_running) {
+      v6Badge.textContent = "RUNNING";
+      v6Badge.className = "badge badge-green";
+    } else {
+      v6Badge.textContent = "OFFLINE";
+      v6Badge.className = "badge badge-red";
+    }
+
+    if (v6.balance !== undefined) {
+      document.getElementById("v6-balance").textContent = "$" + Number(v6.balance).toFixed(2);
+    }
+    
+    if (v6.open_pnl !== undefined) {
+      const openPnlEl = document.getElementById("v6-open-pnl");
+      openPnlEl.textContent = (v6.open_pnl >= 0 ? "+" : "") + "$" + Number(v6.open_pnl).toFixed(2);
+      openPnlEl.style.color = v6.open_pnl >= 0 ? "#38ef7d" : "#ff4e50";
+    }
+
+    if (v6.stats) {
+      document.getElementById("v6-realized-pnl").textContent = "$" + Number(v6.stats.realized_pnl || 0).toFixed(2);
+      document.getElementById("v6-winrate").textContent = (v6.stats.win_rate || 0) + "% (" + (v6.stats.wins || 0) + "W / " + (v6.stats.losses || 0) + "L)";
+    }
+
+    if (v6.pnl_history && chartInstance) {
+      chartInstance.data.datasets[0].data = v6.pnl_history;
+      chartInstance.data.datasets[0].borderColor = (v6.open_pnl >= 0) ? "#38ef7d" : "#ff4e50";
+      chartInstance.update();
+    }
+
+    const tradesContainer = document.getElementById("v6-trades");
+    if (v6.trades && v6.trades.length > 0) {
+      tradesContainer.innerHTML = v6.trades.map(t => "<div class="trade-row"><div><strong>" + t.symbol + "</strong> <small>(" + (t.state || "ACTIVE") + ")</small><br><small style="color: #bbb;">TP: " + t.tp_pct + "% | SL: " + t.sl_pct + "%</small></div><div style="font-weight: bold; color: " + (t.pnl >= 0 ? "#38ef7d" : "#ff4e50") + "">" + (t.pnl >= 0 ? "+" : "") + "$" + Number(t.pnl).toFixed(2) + "</div></div>").join("");
+    } else {
+      tradesContainer.innerHTML = "<p style="color: #aaa;">Scanning entries (No active positions)...</p>";
     }
   }
 
   window.onload = () => {
     initChart();
     fetchBotData();
-    setInterval(fetchBotData, 5000);
+    setInterval(fetchBotData, 3000);
   };
 </script>
 </body>
