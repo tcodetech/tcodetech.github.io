@@ -1,0 +1,36 @@
+{
+  "v6": {
+    "is_running": true,
+    "balance": 1000.0,
+    "open_pnl": 0.0,
+    "stats": {
+      "realized_pnl": 0.0,
+      "win_rate": 0.0,
+      "wins": 0,
+      "losses": 0
+    },
+    "pnl_history": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "trades": []
+  }
+}
