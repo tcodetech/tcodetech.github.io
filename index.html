@@ -52,12 +52,10 @@
 </main>
 
 <footer>
-  <p id="debug-footer">© 2026 TCodeTech • Build: Direct-Telemetry-v2</p>
+  <p>© 2026 TCodeTech • Build: Verified-Syntax-v3</p>
 </footer>
 
 <script>
-  console.log("NEW DASHBOARD CODE LOADED - BUILD 2026-v2");
-
   let chartInstance = null;
 
   function initChart() {
@@ -90,7 +88,7 @@
         }
       });
     } catch(e) {
-      console.error("Chart init error:", e);
+      console.error("Chart initialization error:", e);
     }
   }
 
@@ -140,10 +138,21 @@
       tradesContainer.innerHTML = v6.trades.map(t => {
         const color = (t.pnl >= 0) ? "#38ef7d" : "#ff4e50";
         const sign = (t.pnl >= 0) ? "+" : "";
-        return "<div class="trade-row"><div><strong>" + t.symbol + "</strong> <small>(" + (t.state || "ACTIVE") + ")</small><br><small style="color: #bbb;">TP: " + t.tp_pct + "% | SL: " + t.sl_pct + "%</small></div><div style="font-weight: bold; color: " + color + "">" + sign + "$" + Number(t.pnl).toFixed(2) + "</div></div>";
+        return `
+          <div class="trade-row">
+            <div>
+              <strong>\${t.symbol}</strong> <small>(\${t.state || "ACTIVE"})</small>
+              <br>
+              <small style="color: #bbb;">TP: \${t.tp_pct}% | SL: \${t.sl_pct}%</small>
+            </div>
+            <div style="font-weight: bold; color: \${color}">
+              \${sign}$\${Number(t.pnl).toFixed(2)}
+            </div>
+          </div>
+        `;
       }).join("");
     } else {
-      tradesContainer.innerHTML = "<p style="color: #aaa;">Scanning entries (No active positions)...</p>";
+      tradesContainer.innerHTML = `<p style="color: #aaa;">Scanning entries (No active positions)...</p>`;
     }
   }
 
