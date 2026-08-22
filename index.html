@@ -11,7 +11,7 @@
 
 <header>
   <h1>⚡ Algorithmic Trading Operations</h1>
-  <p id="connection-status">🟡 Initializing stream...</p>
+  <p id="connection-status">🟡 Synchronizing with repository stream...</p>
 </header>
 
 <main>
@@ -88,34 +88,10 @@
     });
   }
 
-  async function fetchBotData() {
-    let data = null;
-
-    try {
-      const res = await fetch("https://api.github.com/repos/tcodetech/tcodetech.github.io/contents/bot_data.json?t=" + Date.now(), {
-        headers: { "Accept": "application/vnd.github+json" }
-      });
-      if (res.ok) {
-        const jsonPayload = await res.json();
-        const decoded = atob(jsonPayload.content.replace(/\s/g, ""));
-        data = JSON.parse(decoded);
-      }
-    } catch(e) {}
-
-    if (!data) {
-      try {
-        const res2 = await fetch("https://raw.githubusercontent.com/tcodetech/tcodetech.github.io/main/bot_data.json?t=" + Date.now());
-        if (res2.ok) data = await res2.json();
-      } catch(e) {}
-    }
-
-    if (!data || !data.v6) {
-      document.getElementById("connection-status").textContent = "🟡 Connecting to data stream...";
-      document.getElementById("connection-status").style.color = "#e3b341";
-      return;
-    }
-
+  function applyData(data) {
+    if (!data || !data.v6) return;
     const v6 = data.v6;
+
     const statusEl = document.getElementById("connection-status");
     const v6Badge = document.getElementById("v6-badge");
 
@@ -161,6 +137,31 @@
     } else {
       tradesContainer.innerHTML = "<p style="color: #aaa;">Scanning entries (No active positions)...</p>";
     }
+  }
+
+  async function fetchBotData() {
+    // 1. Direct Same-Origin fetch (most reliable on GitHub Pages)
+    try {
+      const res = await fetch("./bot_data.json?v=" + Date.now(), { cache: "no-store" });
+      if (res.ok) {
+        const d = await res.json();
+        applyData(d);
+        return;
+      }
+    } catch(e) {}
+
+    // 2. Direct GitHub API Contents fallback
+    try {
+      const resApi = await fetch("https://api.github.com/repos/tcodetech/tcodetech.github.io/contents/bot_data.json?ref=main", {
+        headers: { "Accept": "application/vnd.github+json" }
+      });
+      if (resApi.ok) {
+        const jsonPayload = await resApi.json();
+        const decoded = atob(jsonPayload.content.replace(/\s/g, ""));
+        applyData(JSON.parse(decoded));
+        return;
+      }
+    } catch(e) {}
   }
 
   window.onload = () => {
