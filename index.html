@@ -52,7 +52,7 @@
 </main>
 
 <footer>
-  <p>© 2026 TCodeTech • Build: Verified-Syntax-v3</p>
+  <p>© 2026 TCodeTech • Build: Verified-Syntax-v4</p>
 </footer>
 
 <script>
@@ -141,12 +141,12 @@
         return `
           <div class="trade-row">
             <div>
-              <strong>\${t.symbol}</strong> <small>(\${t.state || "ACTIVE"})</small>
+              <strong>${t.symbol}</strong> <small>(${t.state || "ACTIVE"})</small>
               <br>
-              <small style="color: #bbb;">TP: \${t.tp_pct}% | SL: \${t.sl_pct}%</small>
+              <small style="color: #bbb;">TP: ${t.tp_pct}% | SL: ${t.sl_pct}%</small>
             </div>
-            <div style="font-weight: bold; color: \${color}">
-              \${sign}$\${Number(t.pnl).toFixed(2)}
+            <div style="font-weight: bold; color: ${color}">
+              ${sign}$${Number(t.pnl).toFixed(2)}
             </div>
           </div>
         `;
