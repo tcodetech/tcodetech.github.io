@@ -219,11 +219,16 @@
 <script>
   const TUNNEL_URL = "https://since-classifieds-badly-tired.trycloudflare.com";
   const charts = {};
-  const maxPoints = 20;
+  const maxPoints = 28;
 
   const liveSeries = {
     "4hourbotV6U": Array(maxPoints).fill(0),
     "4hourbotV2": Array(maxPoints).fill(0)
+  };
+
+  const targetPnL = {
+    "4hourbotV6U": 0,
+    "4hourbotV2": 0
   };
 
   function setupChart(canvasId) {
@@ -238,15 +243,18 @@
           data: Array(maxPoints).fill(0),
           borderColor: "#38ef7d",
           backgroundColor: "rgba(56, 239, 125, 0.08)",
-          borderWidth: 2,
-          tension: 0.3,
+          borderWidth: 2.2,
+          tension: 0.45,
           fill: true,
-          pointRadius: 2,
-          pointHoverRadius: 4
+          pointRadius: 0,
+          pointHoverRadius: 5
         }]
       },
       options: {
-        animation: { duration: 300 },
+        animation: {
+          duration: 900,
+          easing: "easeInOutCubic"
+        },
         responsive: true,
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
@@ -278,6 +286,7 @@
     if (openEl && data.open_pnl !== undefined) {
       openEl.textContent = (data.open_pnl >= 0 ? "+" : "") + "$" + Number(data.open_pnl).toFixed(2);
       openEl.style.color = data.open_pnl >= 0 ? "#38ef7d" : "#ff4e50";
+      targetPnL[botKey] = Number(data.open_pnl);
     }
 
     if (data.stats) {
@@ -290,20 +299,6 @@
       if (winEl) {
         winEl.textContent = (data.stats.win_rate || 0) + "% (" + (data.stats.wins || 0) + "W / " + (data.stats.losses || 0) + "L)";
       }
-    }
-
-    // Dynamic Sliding Graph
-    if (charts[botKey] && data.open_pnl !== undefined) {
-      const currentVal = Number(data.open_pnl);
-      liveSeries[botKey].push(currentVal);
-      if (liveSeries[botKey].length > maxPoints) {
-        liveSeries[botKey].shift();
-      }
-
-      charts[botKey].data.datasets[0].data = [...liveSeries[botKey]];
-      charts[botKey].data.datasets[0].borderColor = currentVal >= 0 ? "#38ef7d" : "#ff4e50";
-      charts[botKey].data.datasets[0].backgroundColor = currentVal >= 0 ? "rgba(56, 239, 125, 0.08)" : "rgba(255, 78, 80, 0.08)";
-      charts[botKey].update('none');
     }
 
     const tradesEl = document.getElementById(`trades-${botKey}`);
@@ -334,6 +329,22 @@
     }
   }
 
+  function advanceSmoothCurves() {
+    ["4hourbotV6U", "4hourbotV2"].forEach(botKey => {
+      if (!charts[botKey]) return;
+      const target = targetPnL[botKey];
+      liveSeries[botKey].push(target);
+      if (liveSeries[botKey].length > maxPoints) {
+        liveSeries[botKey].shift();
+      }
+
+      charts[botKey].data.datasets[0].data = [...liveSeries[botKey]];
+      charts[botKey].data.datasets[0].borderColor = target >= 0 ? "#38ef7d" : "#ff4e50";
+      charts[botKey].data.datasets[0].backgroundColor = target >= 0 ? "rgba(56, 239, 125, 0.08)" : "rgba(255, 78, 80, 0.08)";
+      charts[botKey].update();
+    });
+  }
+
   async function fetchAllBots() {
     const statusEl = document.getElementById("connection-status");
     try {
@@ -362,7 +373,8 @@
     charts["4hourbotV6U"] = setupChart("chart-4hourbotV6U");
     charts["4hourbotV2"] = setupChart("chart-4hourbotV2");
     fetchAllBots();
-    setInterval(fetchAllBots, 3000);
+    setInterval(fetchAllBots, 2500);
+    setInterval(advanceSmoothCurves, 1000);
   };
 </script>
 </body>
