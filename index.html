@@ -3,328 +3,210 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TCodeTech | Live Bot Dashboard</title>
+  <title>TCodeTech | Live Dual-Bot Operations</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: #0b0e14; color: #c9d1d9; font-family: monospace, -apple-system, sans-serif; padding: 16px; }
+    .container { max-width: 850px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+    .main-header { display: flex; justify-content: space-between; align-items: center; background: #161b22; border: 1px solid #30363d; padding: 16px; border-radius: 8px; }
+    .main-title { font-size: 18px; font-weight: bold; color: #f0f6fc; }
+    .telemetry-status { font-size: 12px; color: #e3b341; }
 
-    body {
-      background: #0b0e14;
-      color: #c9d1d9;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
-      padding: 20px;
-    }
+    .bot-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #21262d; padding-bottom: 10px; }
+    .bot-name { font-size: 18px; font-weight: bold; color: #ffffff; }
 
-    .dashboard-card {
-      max-width: 850px;
-      margin: 0 auto;
-      background: #161b22;
-      border: 1px solid #30363d;
-      border-radius: 8px;
-      padding: 24px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    }
+    .badge { font-size: 11px; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+    .badge-green { color: #38ef7d; background: rgba(56, 239, 125, 0.12); border: 1px solid #38ef7d; }
+    .badge-red { color: #ff4e50; background: rgba(255, 78, 80, 0.12); border: 1px solid #ff4e50; }
 
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #30363d;
-      padding-bottom: 16px;
-      margin-bottom: 20px;
-    }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .stat-box { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 12px; }
+    .stat-box .label { font-size: 11px; color: #8b949e; display: block; margin-bottom: 4px; }
+    .stat-box .val { font-size: 16px; font-weight: bold; color: #f0f6fc; }
 
-    .badge {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: bold;
-      letter-spacing: 0.5px;
-    }
+    .chart-box { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 8px; height: 160px; margin-bottom: 16px; }
 
-    .badge-green {
-      background: rgba(56, 239, 125, 0.15);
-      color: #38ef7d;
-      border: 1px solid #38ef7d;
-    }
-
-    .badge-red {
-      background: rgba(255, 78, 80, 0.15);
-      color: #ff4e50;
-      border: 1px solid #ff4e50;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
-    .stat-box {
-      background: #0d1117;
-      border: 1px solid #21262d;
-      border-radius: 6px;
-      padding: 14px;
-    }
-
-    .stat-box .label {
-      font-size: 11px;
-      color: #8b949e;
-      display: block;
-      text-transform: uppercase;
-      margin-bottom: 4px;
-      font-weight: 600;
-    }
-
-    .stat-box .val {
-      font-size: 20px;
-      font-weight: bold;
-      display: block;
-      color: #f0f6fc;
-    }
-
-    .chart-container {
-      height: 200px;
-      width: 100%;
-      margin-bottom: 20px;
-      background: #0d1117;
-      border: 1px solid #21262d;
-      border-radius: 6px;
-      padding: 10px;
-    }
-
-    .section-title {
-      font-size: 14px;
-      font-weight: bold;
-      color: #8b949e;
-      text-transform: uppercase;
-      margin-bottom: 10px;
-    }
-
-    .trade-list {
-      background: #0d1117;
-      border-radius: 6px;
-      padding: 12px;
-      border: 1px solid #21262d;
-      min-height: 60px;
-    }
-
-    .trade-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #21262d;
-      padding: 10px 0;
-    }
-
-    .trade-row:last-child {
-      border-bottom: none;
-    }
-
-    .footer {
-      text-align: center;
-      margin-top: 24px;
-      font-size: 11px;
-      color: #6e7681;
-    }
+    .section-title { font-size: 13px; font-weight: bold; color: #8b949e; margin-bottom: 8px; text-transform: uppercase; }
+    .trade-list { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 10px; }
+    .trade-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #21262d; font-size: 13px; }
+    .trade-item:last-child { border-bottom: none; }
+    .side-tag { font-size: 10px; padding: 2px 5px; border-radius: 3px; font-weight: bold; margin-left: 4px; }
+    .side-long { background: rgba(56, 239, 125, 0.2); color: #38ef7d; }
+    .side-short { background: rgba(255, 78, 80, 0.2); color: #ff4e50; }
   </style>
 </head>
 <body>
 
-<div class="dashboard-card">
-  <div class="header">
-    <div>
-      <h2 style="font-size: 18px; color: #f0f6fc;">⚡ Algorithmic Trading Operations</h2>
-      <small id="connection-status" style="color: #e3b341;">🟡 Reading telemetry stream...</small>
-    </div>
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <span style="font-size: 13px; font-weight: bold; color: #8b949e;">🤖 4hourbotV6U</span>
-      <span id="v6-badge" class="badge badge-red">CHECKING...</span>
-    </div>
+<div class="container">
+  <div class="main-header">
+    <div class="main-title">⚡ Algorithmic Trading Operations</div>
+    <div id="connection-status" class="telemetry-status">🟡 Initializing telemetry stream...</div>
   </div>
 
-  <div class="stats-grid">
-    <div class="stat-box">
-      <span class="label">Balance</span>
-      <span class="val" id="v6-balance">$0.00</span>
+  <!-- 4hourbotV6U -->
+  <div class="bot-card" id="card-4hourbotV6U">
+    <div class="card-header">
+      <div class="bot-name">🤖 4hourbotV6U</div>
+      <span id="badge-4hourbotV6U" class="badge badge-red">CHECKING...</span>
     </div>
-    <div class="stat-box">
-      <span class="label">Open PnL</span>
-      <span class="val" id="v6-open-pnl">$0.00</span>
+    <div class="stats-grid">
+      <div class="stat-box"><span class="label">Balance</span><span class="val" id="bal-4hourbotV6U">--</span></div>
+      <div class="stat-box"><span class="label">Open PnL</span><span class="val" id="open-4hourbotV6U">--</span></div>
+      <div class="stat-box"><span class="label">Realized PnL</span><span class="val" id="real-4hourbotV6U">--</span></div>
+      <div class="stat-box"><span class="label">Win Rate</span><span class="val" id="win-4hourbotV6U">--</span></div>
     </div>
-    <div class="stat-box">
-      <span class="label">Realized PnL</span>
-      <span class="val" id="v6-realized-pnl">$0.00</span>
-    </div>
-    <div class="stat-box">
-      <span class="label">Win Rate</span>
-      <span class="val" id="v6-winrate">0.0%</span>
-    </div>
+    <div class="chart-box"><canvas id="chart-4hourbotV6U"></canvas></div>
+    <div class="section-title">Active Positions</div>
+    <div id="trades-4hourbotV6U" class="trade-list"><p style="color:#8b949e; font-size:12px;">Scanning...</p></div>
   </div>
 
-  <div class="chart-container">
-    <canvas id="v6Chart"></canvas>
-  </div>
-
-  <div class="section-title">Active Positions</div>
-  <div id="v6-trades" class="trade-list">
-    <p style="color: #8b949e; font-size: 13px;">Scanning entries (No active positions)...</p>
-  </div>
-
-  <div class="footer">
-    © 2026 TCodeTech • Termux Real-Time Engine
+  <!-- 4hourbotV2 -->
+  <div class="bot-card" id="card-4hourbotV2">
+    <div class="card-header">
+      <div class="bot-name">🤖 4hourbotV2</div>
+      <span id="badge-4hourbotV2" class="badge badge-red">CHECKING...</span>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-box"><span class="label">Balance</span><span class="val" id="bal-4hourbotV2">--</span></div>
+      <div class="stat-box"><span class="label">Open PnL</span><span class="val" id="open-4hourbotV2">--</span></div>
+      <div class="stat-box"><span class="label">Realized PnL</span><span class="val" id="real-4hourbotV2">--</span></div>
+      <div class="stat-box"><span class="label">Win Rate</span><span class="val" id="win-4hourbotV2">--</span></div>
+    </div>
+    <div class="chart-box"><canvas id="chart-4hourbotV2"></canvas></div>
+    <div class="section-title">Active Positions</div>
+    <div id="trades-4hourbotV2" class="trade-list"><p style="color:#8b949e; font-size:12px;">Scanning...</p></div>
   </div>
 </div>
 
 <script>
-  const TUNNEL_URL = "https://throat-issues-blowing-alive.trycloudflare.com";
+  const TUNNEL_URL = "https://since-classifieds-badly-tired.trycloudflare.com";
+  const charts = {};
 
-  let chartInstance = null;
-
-  function initChart() {
-    try {
-      const canvas = document.getElementById("v6Chart");
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      chartInstance = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: Array(20).fill(""),
-          datasets: [{
-            label: "PnL ($)",
-            data: Array(20).fill(0),
-            borderColor: "#38ef7d",
-            backgroundColor: "rgba(56, 239, 125, 0.08)",
-            borderWidth: 2,
-            tension: 0.3,
-            fill: true
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { display: false },
-            y: {
-              grid: { color: "rgba(255,255,255,0.06)" },
-              ticks: { color: "#8b949e", font: { size: 10 } }
-            }
-          }
+  function setupChart(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return null;
+    return new Chart(canvas.getContext("2d"), {
+      type: "line",
+      data: {
+        labels: Array(20).fill(""),
+        datasets: [{
+          label: "PnL ($)",
+          data: Array(20).fill(0),
+          borderColor: "#38ef7d",
+          backgroundColor: "rgba(56, 239, 125, 0.08)",
+          borderWidth: 2,
+          tension: 0.3,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { display: false },
+          y: { grid: { color: "rgba(255,255,255,0.06)" }, ticks: { color: "#8b949e", font: { size: 10 } } }
         }
-      });
-    } catch(e) {
-      console.error("Chart initialization error:", e);
+      }
+    });
+  }
+
+  function updateBotCard(botKey, data) {
+    if (!data) return;
+    const badge = document.getElementById(`badge-${botKey}`);
+    if (badge) {
+      badge.textContent = data.is_running ? "RUNNING" : "OFFLINE";
+      badge.className = data.is_running ? "badge badge-green" : "badge badge-red";
+    }
+
+    const balEl = document.getElementById(`bal-${botKey}`);
+    if (balEl && data.balance !== undefined) {
+      balEl.textContent = "$" + Number(data.balance).toFixed(2);
+    }
+
+    const openEl = document.getElementById(`open-${botKey}`);
+    if (openEl && data.open_pnl !== undefined) {
+      openEl.textContent = (data.open_pnl >= 0 ? "+" : "") + "$" + Number(data.open_pnl).toFixed(2);
+      openEl.style.color = data.open_pnl >= 0 ? "#38ef7d" : "#ff4e50";
+    }
+
+    if (data.stats) {
+      const realEl = document.getElementById(`real-${botKey}`);
+      if (realEl) {
+        realEl.textContent = (data.stats.realized_pnl >= 0 ? "+" : "") + "$" + Number(data.stats.realized_pnl).toFixed(2);
+        realEl.style.color = data.stats.realized_pnl >= 0 ? "#38ef7d" : "#ff4e50";
+      }
+      const winEl = document.getElementById(`win-${botKey}`);
+      if (winEl) {
+        winEl.textContent = (data.stats.win_rate || 0) + "% (" + (data.stats.wins || 0) + "W / " + (data.stats.losses || 0) + "L)";
+      }
+    }
+
+    if (charts[botKey] && Array.isArray(data.pnl_history)) {
+      charts[botKey].data.datasets[0].data = data.pnl_history;
+      charts[botKey].data.datasets[0].borderColor = data.open_pnl >= 0 ? "#38ef7d" : "#ff4e50";
+      charts[botKey].update();
+    }
+
+    const tradesEl = document.getElementById(`trades-${botKey}`);
+    if (tradesEl) {
+      if (data.trades && data.trades.length > 0) {
+        tradesEl.innerHTML = "";
+        data.trades.forEach(t => {
+          const row = document.createElement("div");
+          row.className = "trade-item";
+          const dirClass = t.direction === "SHORT" ? "side-short" : "side-long";
+          row.innerHTML = `
+            <div>
+              <strong>${t.symbol}</strong>
+              <span class="side-tag ${dirClass}">${t.direction || "LONG"}</span>
+              <span style="color:#8b949e; font-size:11px; margin-left:4px;">(${t.state || "OPEN"})</span>
+              <br>
+              <span style="color:#6e7681; font-size:11px;">TP: ${t.tp_pct}% | SL: ${t.sl_pct}%</span>
+            </div>
+            <div style="font-weight:bold; color:${t.pnl >= 0 ? '#38ef7d' : '#ff4e50'};">
+              ${t.pnl >= 0 ? '+' : ''}$${Number(t.pnl).toFixed(2)}
+            </div>
+          `;
+          tradesEl.appendChild(row);
+        });
+      } else {
+        tradesEl.innerHTML = '<p style="color:#8b949e; font-size:12px;">Scanning entries (No active positions)...</p>';
+      }
     }
   }
 
-  function applyData(data) {
-    if (!data || !data.v6) {
-      throw new Error("Payload missing root v6 object");
-    }
-    const v6 = data.v6;
+  async function fetchAllBots() {
     const statusEl = document.getElementById("connection-status");
-    const v6Badge = document.getElementById("v6-badge");
-
-    statusEl.textContent = "🟢 Telemetry Active";
-    statusEl.style.color = "#38ef7d";
-
-    if (v6.is_running === true) {
-      v6Badge.textContent = "RUNNING";
-      v6Badge.className = "badge badge-green";
-    } else {
-      v6Badge.textContent = "OFFLINE";
-      v6Badge.className = "badge badge-red";
-    }
-
-    if (v6.balance !== undefined) {
-      document.getElementById("v6-balance").textContent = "$" + Number(v6.balance).toLocaleString("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
-    }
-
-    if (v6.open_pnl !== undefined) {
-      const openPnlEl = document.getElementById("v6-open-pnl");
-      openPnlEl.textContent = (v6.open_pnl >= 0 ? "+" : "") + "$" + Number(v6.open_pnl).toFixed(2);
-      openPnlEl.style.color = v6.open_pnl >= 0 ? "#38ef7d" : "#ff4e50";
-    }
-
-    if (v6.stats) {
-      const realPnlEl = document.getElementById("v6-realized-pnl");
-      realPnlEl.textContent = (v6.stats.realized_pnl >= 0 ? "+" : "") + "$" + Number(v6.stats.realized_pnl || 0).toFixed(2);
-      realPnlEl.style.color = (v6.stats.realized_pnl || 0) >= 0 ? "#38ef7d" : "#ff4e50";
-      document.getElementById("v6-winrate").textContent = (v6.stats.win_rate || 0) + "% (" + (v6.stats.wins || 0) + "W / " + (v6.stats.losses || 0) + "L)";
-    }
-
-    if (v6.pnl_history && Array.isArray(v6.pnl_history) && chartInstance) {
-      chartInstance.data.datasets[0].data = v6.pnl_history;
-      chartInstance.data.datasets[0].borderColor = (v6.open_pnl >= 0) ? "#38ef7d" : "#ff4e50";
-      chartInstance.update();
-    }
-
-    const tradesContainer = document.getElementById("v6-trades");
-    if (v6.trades && Array.isArray(v6.trades) && v6.trades.length > 0) {
-      tradesContainer.innerHTML = "";
-      v6.trades.forEach(t => {
-        const row = document.createElement("div");
-        row.className = "trade-row";
-
-        const info = document.createElement("div");
-        info.innerHTML = `
-          <strong style="color: #f0f6fc;">${t.symbol}</strong>
-          <small style="color: #8b949e; margin-left: 6px;">(${t.state || "ACTIVE"})</small>
-          <br>
-          <small style="color: #6e7681;">TP: ${t.tp_pct}% | SL: ${t.sl_pct}%</small>
-        `;
-
-        const pnl = document.createElement("div");
-        pnl.style.fontWeight = "bold";
-        pnl.style.color = (t.pnl >= 0) ? "#38ef7d" : "#ff4e50";
-        pnl.textContent = (t.pnl >= 0 ? "+" : "") + "$" + Number(t.pnl).toFixed(2);
-
-        row.appendChild(info);
-        row.appendChild(pnl);
-        tradesContainer.appendChild(row);
-      });
-    } else {
-      tradesContainer.innerHTML = '<p style="color: #8b949e; font-size: 13px;">Scanning entries (No active positions)...</p>';
-    }
-  }
-
-  async function fetchBotData() {
-    const statusEl = document.getElementById("connection-status");
-    const badge = document.getElementById("v6-badge");
-
     try {
       const res = await fetch(`${TUNNEL_URL}/api/public/bot-data?t=${Date.now()}`, {
         method: "GET",
         cache: "no-store",
         headers: { "Accept": "application/json" }
       });
-
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
-      applyData(data);
+
+      statusEl.textContent = "🟢 Telemetry Active";
+      statusEl.style.color = "#38ef7d";
+
+      if (data.bots) {
+        updateBotCard("4hourbotV6U", data.bots["4hourbotV6U"]);
+        updateBotCard("4hourbotV2", data.bots["4hourbotV2"]);
+      }
     } catch (err) {
-      console.error("BOT DATA ERROR:", err);
       statusEl.textContent = "🔴 Telemetry Offline: " + err.message;
       statusEl.style.color = "#ff4e50";
-      badge.textContent = "DISCONNECTED";
-      badge.className = "badge badge-red";
     }
   }
 
   window.onload = () => {
-    initChart();
-    fetchBotData();
-    setInterval(fetchBotData, 3000);
+    charts["4hourbotV6U"] = setupChart("chart-4hourbotV6U");
+    charts["4hourbotV2"] = setupChart("chart-4hourbotV2");
+    fetchAllBots();
+    setInterval(fetchAllBots, 3000);
   };
 </script>
 </body>
