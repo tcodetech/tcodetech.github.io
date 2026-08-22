@@ -52,7 +52,7 @@
 </main>
 
 <footer>
-  <p>© 2026 TCodeTech • Build: Verified-Main-Only</p>
+  <p>© 2026 TCodeTech • Build: Verified-Syntax-Final3</p>
 </footer>
 
 <script>
@@ -101,7 +101,7 @@
     const statusEl = document.getElementById("connection-status");
     const v6Badge = document.getElementById("v6-badge");
 
-    statusEl.textContent = "🟢 Live Stream Connected";
+    statusEl.textContent = "🟢 Telemetry Active";
     statusEl.style.color = "#38ef7d";
 
     if (v6.is_running === true) {
@@ -113,7 +113,7 @@
     }
 
     if (v6.balance !== undefined) {
-      document.getElementById("v6-balance").textContent = "$" + Number(v6.balance).toFixed(2);
+      document.getElementById("v6-balance").textContent = "$" + Number(v6.balance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     if (v6.open_pnl !== undefined) {
@@ -135,24 +135,37 @@
 
     const tradesContainer = document.getElementById("v6-trades");
     if (v6.trades && Array.isArray(v6.trades) && v6.trades.length > 0) {
-      tradesContainer.innerHTML = v6.trades.map(t => {
-        const color = (t.pnl >= 0) ? "#38ef7d" : "#ff4e50";
-        const sign = (t.pnl >= 0) ? "+" : "";
-        return `
-          <div class="trade-row">
-            <div>
-              <strong>${t.symbol}</strong> <small>(${t.state || "ACTIVE"})</small>
-              <br>
-              <small style="color: #bbb;">TP: ${t.tp_pct}% | SL: ${t.sl_pct}%</small>
-            </div>
-            <div style="font-weight: bold; color: ${color}">
-              ${sign}$${Number(t.pnl).toFixed(2)}
-            </div>
-          </div>
-        `;
-      }).join("");
+      tradesContainer.innerHTML = "";
+      v6.trades.forEach(t => {
+        const row = document.createElement("div");
+        row.className = "trade-row";
+
+        const info = document.createElement("div");
+        const strong = document.createElement("strong");
+        strong.textContent = t.symbol;
+        const state = document.createElement("small");
+        state.textContent = " (" + (t.state || "ACTIVE") + ")";
+        const br = document.createElement("br");
+        const details = document.createElement("small");
+        details.style.color = "#bbb";
+        details.textContent = "TP: " + t.tp_pct + "% | SL: " + t.sl_pct + "%";
+
+        info.appendChild(strong);
+        info.appendChild(state);
+        info.appendChild(br);
+        info.appendChild(details);
+
+        const pnl = document.createElement("div");
+        pnl.style.fontWeight = "bold";
+        pnl.style.color = (t.pnl >= 0) ? "#38ef7d" : "#ff4e50";
+        pnl.textContent = (t.pnl >= 0 ? "+" : "") + "$" + Number(t.pnl).toFixed(2);
+
+        row.appendChild(info);
+        row.appendChild(pnl);
+        tradesContainer.appendChild(row);
+      });
     } else {
-      tradesContainer.innerHTML = `<p style="color: #aaa;">Scanning entries (No active positions)...</p>`;
+      tradesContainer.innerHTML = "<p style="color: #aaa;">Scanning entries (No active positions)...</p>";
     }
   }
 
