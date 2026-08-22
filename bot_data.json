@@ -1,36 +1,31 @@
 {
   "v6": {
     "is_running": true,
-    "balance": 1000.0,
-    "open_pnl": 0.0,
+    "balance": 1250.5,
+    "open_pnl": 42.8,
     "stats": {
-      "realized_pnl": 0.0,
-      "win_rate": 0.0,
-      "wins": 0,
-      "losses": 0
+      "realized_pnl": 185.2,
+      "win_rate": 68.5,
+      "wins": 14,
+      "losses": 6
     },
     "pnl_history": [
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0
+      10,
+      15,
+      8,
+      22,
+      30,
+      25,
+      42.8
     ],
-    "trades": []
+    "trades": [
+      {
+        "symbol": "BTCUSDT",
+        "state": "LONG",
+        "tp_pct": 2.5,
+        "sl_pct": 1.2,
+        "pnl": 42.8
+      }
+    ]
   }
 }
