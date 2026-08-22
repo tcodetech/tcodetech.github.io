@@ -11,7 +11,7 @@
 
 <header>
   <h1>⚡ Algorithmic Trading Operations</h1>
-  <p id="connection-status">🟡 Synchronizing with repository stream...</p>
+  <p id="connection-status">🟡 Reading telemetry stream...</p>
 </header>
 
 <main>
@@ -52,44 +52,52 @@
 </main>
 
 <footer>
-  <p>© 2026 TCodeTech • Auto-refreshing every 3s</p>
+  <p id="debug-footer">© 2026 TCodeTech • Build: Direct-Telemetry-v2</p>
 </footer>
 
 <script>
+  console.log("NEW DASHBOARD CODE LOADED - BUILD 2026-v2");
+
   let chartInstance = null;
 
   function initChart() {
-    const canvas = document.getElementById("v6Chart");
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    chartInstance = new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: Array(20).fill(""),
-        datasets: [{
-          label: "PnL ($)",
-          data: Array(20).fill(0),
-          borderColor: "#38ef7d",
-          backgroundColor: "rgba(56, 239, 125, 0.1)",
-          borderWidth: 2,
-          tension: 0.3,
-          fill: true
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { display: false },
-          y: { grid: { color: "rgba(255,255,255,0.1)" }, ticks: { color: "#ccc" } }
+    try {
+      const canvas = document.getElementById("v6Chart");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      chartInstance = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: Array(20).fill(""),
+          datasets: [{
+            label: "PnL ($)",
+            data: Array(20).fill(0),
+            borderColor: "#38ef7d",
+            backgroundColor: "rgba(56, 239, 125, 0.1)",
+            borderWidth: 2,
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { display: false },
+            y: { grid: { color: "rgba(255,255,255,0.1)" }, ticks: { color: "#ccc" } }
+          }
         }
-      }
-    });
+      });
+    } catch(e) {
+      console.error("Chart init error:", e);
+    }
   }
 
   function applyData(data) {
-    if (!data || !data.v6) return;
+    if (!data || !data.v6) {
+      throw new Error("Payload missing root v6 object");
+    }
     const v6 = data.v6;
 
     const statusEl = document.getElementById("connection-status");
@@ -98,7 +106,7 @@
     statusEl.textContent = "🟢 Live Stream Connected";
     statusEl.style.color = "#38ef7d";
 
-    if (v6.is_running) {
+    if (v6.is_running === true) {
       v6Badge.textContent = "RUNNING";
       v6Badge.className = "badge badge-green";
     } else {
@@ -121,14 +129,14 @@
       document.getElementById("v6-winrate").textContent = (v6.stats.win_rate || 0) + "% (" + (v6.stats.wins || 0) + "W / " + (v6.stats.losses || 0) + "L)";
     }
 
-    if (v6.pnl_history && chartInstance) {
+    if (v6.pnl_history && Array.isArray(v6.pnl_history) && chartInstance) {
       chartInstance.data.datasets[0].data = v6.pnl_history;
       chartInstance.data.datasets[0].borderColor = (v6.open_pnl >= 0) ? "#38ef7d" : "#ff4e50";
       chartInstance.update();
     }
 
     const tradesContainer = document.getElementById("v6-trades");
-    if (v6.trades && v6.trades.length > 0) {
+    if (v6.trades && Array.isArray(v6.trades) && v6.trades.length > 0) {
       tradesContainer.innerHTML = v6.trades.map(t => {
         const color = (t.pnl >= 0) ? "#38ef7d" : "#ff4e50";
         const sign = (t.pnl >= 0) ? "+" : "";
@@ -140,28 +148,28 @@
   }
 
   async function fetchBotData() {
-    // 1. Direct Same-Origin fetch (most reliable on GitHub Pages)
-    try {
-      const res = await fetch("./bot_data.json?v=" + Date.now(), { cache: "no-store" });
-      if (res.ok) {
-        const d = await res.json();
-        applyData(d);
-        return;
-      }
-    } catch(e) {}
+    const statusEl = document.getElementById("connection-status");
+    const badge = document.getElementById("v6-badge");
 
-    // 2. Direct GitHub API Contents fallback
     try {
-      const resApi = await fetch("https://api.github.com/repos/tcodetech/tcodetech.github.io/contents/bot_data.json?ref=main", {
-        headers: { "Accept": "application/vnd.github+json" }
+      const url = "./bot_data.json?live=" + Date.now();
+      const res = await fetch(url, {
+        method: "GET",
+        cache: "no-store",
+        headers: { "Accept": "application/json" }
       });
-      if (resApi.ok) {
-        const jsonPayload = await resApi.json();
-        const decoded = atob(jsonPayload.content.replace(/\s/g, ""));
-        applyData(JSON.parse(decoded));
-        return;
-      }
-    } catch(e) {}
+
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const text = await res.text();
+      const data = JSON.parse(text);
+      applyData(data);
+    } catch (err) {
+      console.error("BOT DATA ERROR:", err);
+      statusEl.textContent = "🔴 Error: " + err.message;
+      statusEl.style.color = "#ff4e50";
+      badge.textContent = "ERROR";
+      badge.className = "badge badge-red";
+    }
   }
 
   window.onload = () => {
