@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TCodeTech | Live Dual-Bot Operations</title>
+  <title>TCodeTech | Live Bot Operations</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -13,7 +13,8 @@
     .main-title { font-size: 18px; font-weight: bold; color: #f0f6fc; }
     .telemetry-status { font-size: 12px; color: #e3b341; }
 
-    .bot-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
+    .bot-grid { display: flex; flex-direction: column; gap: 20px; }
+    .bot-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
     .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #21262d; padding-bottom: 10px; }
     .bot-name { font-size: 18px; font-weight: bold; color: #ffffff; }
 
@@ -27,7 +28,6 @@
     .stat-box .val { font-size: 16px; font-weight: bold; color: #f0f6fc; }
 
     .chart-box { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 8px; height: 160px; margin-bottom: 16px; }
-
     .section-title { font-size: 13px; font-weight: bold; color: #8b949e; margin-bottom: 8px; text-transform: uppercase; }
     .trade-list { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 10px; }
     .trade-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #21262d; font-size: 13px; }
@@ -42,63 +42,48 @@
 <div class="container">
   <div class="main-header">
     <div class="main-title">⚡ Algorithmic Trading Operations</div>
-    <div id="connection-status" class="telemetry-status">🟡 Initializing telemetry stream...</div>
+    <div id="connection-status" class="telemetry-status">🟡 Initializing stream...</div>
   </div>
 
-  <!-- 4hourbotV6U -->
-  <div class="bot-card" id="card-4hourbotV6U">
-    <div class="card-header">
-      <div class="bot-name">🤖 4hourbotV6U</div>
-      <span id="badge-4hourbotV6U" class="badge badge-red">CHECKING...</span>
-    </div>
-    <div class="stats-grid">
-      <div class="stat-box"><span class="label">Balance</span><span class="val" id="bal-4hourbotV6U">--</span></div>
-      <div class="stat-box"><span class="label">Open PnL</span><span class="val" id="open-4hourbotV6U">--</span></div>
-      <div class="stat-box"><span class="label">Realized PnL</span><span class="val" id="real-4hourbotV6U">--</span></div>
-      <div class="stat-box"><span class="label">Win Rate</span><span class="val" id="win-4hourbotV6U">--</span></div>
-    </div>
-    <div class="chart-box"><canvas id="chart-4hourbotV6U"></canvas></div>
-    <div class="section-title">Active Positions</div>
-    <div id="trades-4hourbotV6U" class="trade-list"><p style="color:#8b949e; font-size:12px;">Scanning...</p></div>
-  </div>
-
-  <!-- 4hourbotV2 -->
-  <div class="bot-card" id="card-4hourbotV2">
-    <div class="card-header">
-      <div class="bot-name">🤖 4hourbotV2</div>
-      <span id="badge-4hourbotV2" class="badge badge-red">CHECKING...</span>
-    </div>
-    <div class="stats-grid">
-      <div class="stat-box"><span class="label">Balance</span><span class="val" id="bal-4hourbotV2">--</span></div>
-      <div class="stat-box"><span class="label">Open PnL</span><span class="val" id="open-4hourbotV2">--</span></div>
-      <div class="stat-box"><span class="label">Realized PnL</span><span class="val" id="real-4hourbotV2">--</span></div>
-      <div class="stat-box"><span class="label">Win Rate</span><span class="val" id="win-4hourbotV2">--</span></div>
-    </div>
-    <div class="chart-box"><canvas id="chart-4hourbotV2"></canvas></div>
-    <div class="section-title">Active Positions</div>
-    <div id="trades-4hourbotV2" class="trade-list"><p style="color:#8b949e; font-size:12px;">Scanning...</p></div>
+  <div id="bot-grid" class="bot-grid">
+    <!-- Bot cards dynamically render here -->
   </div>
 </div>
 
 <script>
-  const TUNNEL_URL = "https://internal-enables-void-dated.trycloudflare.com";
+  const TUNNEL_URL = "https://ladder-flow-perry-wines.trycloudflare.com";
   const charts = {};
+  const liveSeries = {};
+  const targetPnL = {};
   const maxPoints = 28;
 
-  const liveSeries = {
-    "4hourbotV6U": Array(maxPoints).fill(0),
-    "4hourbotV2": Array(maxPoints).fill(0)
-  };
+  function createBotCardDOM(botKey) {
+    const grid = document.getElementById("bot-grid");
+    const card = document.createElement("div");
+    card.className = "bot-card";
+    card.id = `card-${botKey}`;
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="bot-name">🤖 ${botKey}</div>
+        <span id="badge-${botKey}" class="badge badge-green">RUNNING</span>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-box"><span class="label">Balance</span><span class="val" id="bal-${botKey}">--</span></div>
+        <div class="stat-box"><span class="label">Open PnL</span><span class="val" id="open-${botKey}">--</span></div>
+        <div class="stat-box"><span class="label">Realized PnL</span><span class="val" id="real-${botKey}">--</span></div>
+        <div class="stat-box"><span class="label">Win Rate</span><span class="val" id="win-${botKey}">--</span></div>
+      </div>
+      <div class="chart-box"><canvas id="chart-${botKey}"></canvas></div>
+      <div class="section-title">Active Positions</div>
+      <div id="trades-${botKey}" class="trade-list"><p style="color:#8b949e; font-size:12px;">Scanning...</p></div>
+    `;
+    grid.appendChild(card);
 
-  const targetPnL = {
-    "4hourbotV6U": 0,
-    "4hourbotV2": 0
-  };
+    liveSeries[botKey] = Array(maxPoints).fill(0);
+    targetPnL[botKey] = 0;
 
-  function setupChart(canvasId) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return null;
-    return new Chart(canvas.getContext("2d"), {
+    const ctx = document.getElementById(`chart-${botKey}`).getContext("2d");
+    charts[botKey] = new Chart(ctx, {
       type: "line",
       data: {
         labels: Array(maxPoints).fill(""),
@@ -110,8 +95,7 @@
           borderWidth: 2.2,
           tension: 0.45,
           fill: true,
-          pointRadius: 0,
-          pointHoverRadius: 5
+          pointRadius: 0
         }]
       },
       options: {
@@ -121,27 +105,19 @@
         plugins: { legend: { display: false } },
         scales: {
           x: { display: false },
-          y: {
-            grid: { color: "rgba(255,255,255,0.06)" },
-            ticks: { color: "#8b949e", font: { size: 10 } }
-          }
+          y: { grid: { color: "rgba(255,255,255,0.06)" }, ticks: { color: "#8b949e", font: { size: 10 } } }
         }
       }
     });
   }
 
   function updateBotCard(botKey, data) {
-    if (!data) return;
-    const badge = document.getElementById(`badge-${botKey}`);
-    if (badge) {
-      badge.textContent = data.is_running ? "RUNNING" : "OFFLINE";
-      badge.className = data.is_running ? "badge badge-green" : "badge badge-red";
+    if (!document.getElementById(`card-${botKey}`)) {
+      createBotCardDOM(botKey);
     }
 
     const balEl = document.getElementById(`bal-${botKey}`);
-    if (balEl && data.balance !== undefined) {
-      balEl.textContent = "$" + Number(data.balance).toFixed(2);
-    }
+    if (balEl && data.balance !== undefined) balEl.textContent = "$" + Number(data.balance).toFixed(2);
 
     const openEl = document.getElementById(`open-${botKey}`);
     if (openEl && data.open_pnl !== undefined) {
@@ -157,9 +133,7 @@
         realEl.style.color = data.stats.realized_pnl >= 0 ? "#38ef7d" : "#ff4e50";
       }
       const winEl = document.getElementById(`win-${botKey}`);
-      if (winEl) {
-        winEl.textContent = (data.stats.win_rate || 0) + "% (" + (data.stats.wins || 0) + "W / " + (data.stats.losses || 0) + "L)";
-      }
+      if (winEl) winEl.textContent = `${data.stats.win_rate || 0}% (${data.stats.wins || 0}W / ${data.stats.losses || 0}L)`;
     }
 
     const tradesEl = document.getElementById(`trades-${botKey}`);
@@ -191,13 +165,10 @@
   }
 
   function advanceSmoothCurves() {
-    ["4hourbotV6U", "4hourbotV2"].forEach(botKey => {
-      if (!charts[botKey]) return;
-      const target = targetPnL[botKey];
+    Object.keys(charts).forEach(botKey => {
+      const target = targetPnL[botKey] || 0;
       liveSeries[botKey].push(target);
-      if (liveSeries[botKey].length > maxPoints) {
-        liveSeries[botKey].shift();
-      }
+      if (liveSeries[botKey].length > maxPoints) liveSeries[botKey].shift();
 
       charts[botKey].data.datasets[0].data = [...liveSeries[botKey]];
       charts[botKey].data.datasets[0].borderColor = target >= 0 ? "#38ef7d" : "#ff4e50";
@@ -221,8 +192,9 @@
       statusEl.style.color = "#38ef7d";
 
       if (data.bots) {
-        updateBotCard("4hourbotV6U", data.bots["4hourbotV6U"]);
-        updateBotCard("4hourbotV2", data.bots["4hourbotV2"]);
+        Object.entries(data.bots).forEach(([botKey, botData]) => {
+          updateBotCard(botKey, botData);
+        });
       }
     } catch (err) {
       statusEl.textContent = "🔴 Telemetry Offline: " + err.message;
@@ -231,8 +203,6 @@
   }
 
   window.onload = () => {
-    charts["4hourbotV6U"] = setupChart("chart-4hourbotV6U");
-    charts["4hourbotV2"] = setupChart("chart-4hourbotV2");
     fetchAllBots();
     setInterval(fetchAllBots, 2500);
     setInterval(advanceSmoothCurves, 1000);
