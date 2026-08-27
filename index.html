@@ -67,12 +67,6 @@
 
     .trade-item:last-child { border-bottom: none; }
 
-    .side-tag { font-size: 10px; padding: 2px 5px; border-radius: 3px; font-weight: bold; margin-left: 4px; }
-
-    .side-long { background: rgba(56, 239, 125, 0.2); color: #38ef7d; }
-
-    .side-short { background: rgba(255, 78, 80, 0.2); color: #ff4e50; }
-
   </style>
 
 </head>
@@ -101,7 +95,7 @@
 
 <script>
 
-  const TUNNEL_URL = "https://makes-payments-swimming-tank.trycloudflare.com";
+  const TUNNEL_URL = "https://placeholder-domain.trycloudflare.com";
 
   const charts = {};
 
@@ -297,17 +291,13 @@
 
           row.className = "trade-item";
 
-          const dirClass = t.direction === "SHORT" ? "side-short" : "side-long";
-
           row.innerHTML = `
 
             <div>
 
               <strong>${t.symbol}</strong>
 
-              <span class="side-tag ${dirClass}">${t.direction || "LONG"}</span>
-
-              <span style="color:#8b949e; font-size:11px; margin-left:4px;">(${t.state || "OPEN"})</span>
+              <span style="color:#8b949e; font-size:11px; margin-left:6px;">(${t.state || "OPEN"})</span>
 
             </div>
 
@@ -363,47 +353,21 @@
 
   async function fetchAllBots() {
 
-    let authKey = sessionStorage.getItem("telemetry_key");
-
-    if (!authKey) {
-
-      authKey = prompt("Enter Trading Telemetry Key:");
-
-      if (authKey) sessionStorage.setItem("telemetry_key", authKey);
-
-    }
-
-
-
     const statusEl = document.getElementById("connection-status");
 
     try {
 
-      const res = await fetch(`${TUNNEL_URL}/api/private/bot-data?t=${Date.now()}`, {
+      const res = await fetch(`${TUNNEL_URL}/api/public/bot-data?t=${Date.now()}`, {
 
         method: "GET",
 
         cache: "no-store",
 
-        headers: {
-
-          "Accept": "application/json",
-
-          "X-Auth-Key": authKey || ""
-
-        }
+        headers: { "Accept": "application/json" }
 
       });
 
 
-
-      if (res.status === 401) {
-
-        sessionStorage.removeItem("telemetry_key");
-
-        throw new Error("401 Unauthorized (Invalid Key)");
-
-      }
 
       if (!res.ok) throw new Error("HTTP " + res.status);
 
