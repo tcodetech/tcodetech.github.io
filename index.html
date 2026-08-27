@@ -101,7 +101,7 @@
 
 <script>
 
-  const TUNNEL_URL = "https://makes-payments-swimming-tank.trycloudflare.com";
+  const TUNNEL_URL = "https://placeholder-domain.trycloudflare.com";
 
   const charts = {};
 
@@ -309,10 +309,6 @@
 
               <span style="color:#8b949e; font-size:11px; margin-left:4px;">(${t.state || "OPEN"})</span>
 
-              <br>
-
-              <span style="color:#6e7681; font-size:11px;">TP: ${t.tp_pct}% | SL: ${t.sl_pct}%</span>
-
             </div>
 
             <div style="font-weight:bold; color:${t.pnl >= 0 ? '#38ef7d' : '#ff4e50'};">
@@ -367,19 +363,47 @@
 
   async function fetchAllBots() {
 
+    let authKey = sessionStorage.getItem("telemetry_key");
+
+    if (!authKey) {
+
+      authKey = prompt("Enter Trading Telemetry Key:");
+
+      if (authKey) sessionStorage.setItem("telemetry_key", authKey);
+
+    }
+
+
+
     const statusEl = document.getElementById("connection-status");
 
     try {
 
-      const res = await fetch(`${TUNNEL_URL}/api/public/bot-data?t=${Date.now()}`, {
+      const res = await fetch(`${TUNNEL_URL}/api/private/bot-data?t=${Date.now()}`, {
 
         method: "GET",
 
         cache: "no-store",
 
-        headers: { "Accept": "application/json" }
+        headers: {
+
+          "Accept": "application/json",
+
+          "X-Auth-Key": authKey || ""
+
+        }
 
       });
+
+
+
+      if (res.status === 401) {
+
+        sessionStorage.removeItem("telemetry_key");
+
+        throw new Error("401 Unauthorized (Invalid Key)");
+
+      }
 
       if (!res.ok) throw new Error("HTTP " + res.status);
 
@@ -405,7 +429,7 @@
 
     } catch (err) {
 
-      statusEl.textContent = "🔴 Telemetry Offline: " + err.message;
+      statusEl.textContent = "🔴 " + err.message;
 
       statusEl.style.color = "#ff4e50";
 
