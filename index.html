@@ -33,9 +33,13 @@
 
     .bot-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
 
-    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #21262d; padding-bottom: 10px; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #21262d; padding-bottom: 10px; }
 
     .bot-name { font-size: 18px; font-weight: bold; color: #ffffff; }
+
+    .header-tags { display: flex; align-items: center; gap: 8px; }
+
+    .runtime-tag { font-size: 11px; color: #8b949e; background: #0d1117; border: 1px solid #30363d; padding: 3px 8px; border-radius: 4px; }
 
 
 
@@ -47,7 +51,15 @@
 
 
 
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .milestone-banner { background: #0d1117; border: 1px dashed #30363d; border-radius: 6px; padding: 8px 12px; margin-bottom: 14px; font-size: 11px; color: #8b949e; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+
+    .milestone-banner strong { color: #f0f6fc; }
+
+    .milestone-highlight { color: #e3b341; font-weight: bold; }
+
+
+
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px; }
 
     .stat-box { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 12px; }
 
@@ -95,7 +107,7 @@
 
 <script>
 
-  const TUNNEL_URL = "https://routing-seek-headlines-nursery.trycloudflare.com";
+  const TUNNEL_URL = "https://placeholder-domain.trycloudflare.com";
 
   const charts = {};
 
@@ -123,7 +135,23 @@
 
         <div class="bot-name">🤖 ${botKey}</div>
 
-        <span id="badge-${botKey}" class="badge badge-red">INITIALIZING</span>
+        <div class="header-tags">
+
+          <span id="runtime-${botKey}" class="runtime-tag">⏱ 0m</span>
+
+          <span id="badge-${botKey}" class="badge badge-red">INITIALIZING</span>
+
+        </div>
+
+      </div>
+
+      <div id="milestones-${botKey}" class="milestone-banner">
+
+        <span>Capital: <strong id="cap-${botKey}">$0.00</strong></span>
+
+        <span>+50% Milestone: <span id="half-${botKey}" class="milestone-highlight">0</span></span>
+
+        <span>2x Milestone: <span id="double-${botKey}" class="milestone-highlight">0</span></span>
 
       </div>
 
@@ -232,6 +260,34 @@
       badge.textContent = data.is_running ? "RUNNING" : "OFFLINE";
 
       badge.className = data.is_running ? "badge badge-green" : "badge badge-red";
+
+    }
+
+
+
+    const runtimeEl = document.getElementById(`runtime-${botKey}`);
+
+    if (runtimeEl && data.runtime) {
+
+      runtimeEl.textContent = "⏱ " + data.runtime;
+
+    }
+
+
+
+    if (data.milestones) {
+
+      const capEl = document.getElementById(`cap-${botKey}`);
+
+      if (capEl) capEl.textContent = "$" + Number(data.milestones.starting_capital).toFixed(2);
+
+      const halfEl = document.getElementById(`half-${botKey}`);
+
+      if (halfEl) halfEl.textContent = `${data.milestones.half_times}x`;
+
+      const doubleEl = document.getElementById(`double-${botKey}`);
+
+      if (doubleEl) doubleEl.textContent = `${data.milestones.double_times}x`;
 
     }
 
