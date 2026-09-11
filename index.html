@@ -19,13 +19,25 @@
 
     body { background-color: #0b0e14; color: #c9d1d9; font-family: monospace, -apple-system, sans-serif; padding: 16px; }
 
-    .container { max-width: 850px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+    .container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 
-    .main-header { display: flex; justify-content: space-between; align-items: center; background: #161b22; border: 1px solid #30363d; padding: 16px; border-radius: 8px; }
+    
+
+    .main-header { display: flex; justify-content: space-between; align-items: center; background: #161b22; border: 1px solid #30363d; padding: 16px; border-radius: 8px; flex-wrap: wrap; gap: 10px; }
 
     .main-title { font-size: 18px; font-weight: bold; color: #f0f6fc; }
 
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+
     .telemetry-status { font-size: 12px; color: #e3b341; }
+
+    
+
+    .btn-compare { background: #238636; color: #ffffff; border: 1px solid #2ea043; padding: 6px 14px; border-radius: 6px; font-family: inherit; font-size: 12px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+
+    .btn-compare:hover { background: #2ea043; }
+
+    .btn-compare:disabled { background: #21262d; border-color: #30363d; color: #484f58; cursor: not-allowed; }
 
 
 
@@ -35,7 +47,11 @@
 
     .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #21262d; padding-bottom: 10px; }
 
+    .header-left { display: flex; align-items: center; gap: 10px; }
+
     .bot-name { font-size: 18px; font-weight: bold; color: #ffffff; }
+
+    .select-checkbox { transform: scale(1.25); cursor: pointer; accent-color: #238636; }
 
     .header-tags { display: flex; align-items: center; gap: 8px; }
 
@@ -79,6 +95,42 @@
 
     .trade-item:last-child { border-bottom: none; }
 
+
+
+    /* Comparison Modal */
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); z-index: 999; justify-content: center; align-items: center; padding: 16px; }
+
+    .modal-content { background: #161b22; border: 1px solid #30363d; border-radius: 8px; max-width: 950px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid #21262d; }
+
+    .modal-title { font-size: 16px; font-weight: bold; color: #f0f6fc; }
+
+    .btn-close { background: none; border: none; font-size: 20px; color: #8b949e; cursor: pointer; font-family: inherit; }
+
+    .btn-close:hover { color: #f0f6fc; }
+
+    .modal-body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+
+
+
+    .compare-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+
+    .compare-table th, .compare-table td { border: 1px solid #21262d; padding: 10px; text-align: left; }
+
+    .compare-table th { background: #0d1117; color: #8b949e; }
+
+    .compare-table td { background: #161b22; }
+
+
+
+    .positions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+
+    .bot-column { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 12px; }
+
+    .bot-column-header { font-weight: bold; color: #f0f6fc; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #21262d; display: flex; justify-content: space-between; }
+
   </style>
 
 </head>
@@ -93,7 +145,13 @@
 
     <div class="main-title">⚡ Algorithmic Trading Operations</div>
 
-    <div id="connection-status" class="telemetry-status">🟡 Initializing stream...</div>
+    <div class="header-actions">
+
+      <div id="connection-status" class="telemetry-status">🟡 Initializing stream...</div>
+
+      <button id="compare-btn" class="btn-compare" onclick="openCompareModal()" disabled>📊 Compare (0)</button>
+
+    </div>
 
   </div>
 
@@ -105,9 +163,69 @@
 
 
 
+<!-- Comparison Modal -->
+
+<div id="compare-modal" class="modal-overlay">
+
+  <div class="modal-content">
+
+    <div class="modal-header">
+
+      <div class="modal-title">📊 Multi-Bot Portfolio Comparison</div>
+
+      <button class="btn-close" onclick="closeCompareModal()">&times;</button>
+
+    </div>
+
+    <div class="modal-body">
+
+      <div>
+
+        <div class="section-title">Core Performance Metrics</div>
+
+        <div style="overflow-x:auto;">
+
+          <table class="compare-table" id="metrics-table">
+
+            <thead>
+
+              <tr>
+
+                <th>Metric</th>
+
+              </tr>
+
+            </thead>
+
+            <tbody></tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+
+
+      <div>
+
+        <div class="section-title">Active Coin Positions Breakdown</div>
+
+        <div id="compare-positions-grid" class="positions-grid"></div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
 <script>
 
-  const TUNNEL_URL = "https://classic-ambassador-clocks-conjunction.trycloudflare.com";
+  const TUNNEL_URL = "https://placeholder-domain.trycloudflare.com";
 
   const charts = {};
 
@@ -115,7 +233,227 @@
 
   const targetPnL = {};
 
+  const selectedBots = new Set();
+
+  let latestTelemetryData = {};
+
   const maxPoints = 28;
+
+
+
+  function toggleBotSelection(botKey) {
+
+    if (selectedBots.has(botKey)) {
+
+      selectedBots.delete(botKey);
+
+    } else {
+
+      selectedBots.add(botKey);
+
+    }
+
+    updateCompareButton();
+
+    if (document.getElementById("compare-modal").style.display === "flex") {
+
+      renderCompareContent();
+
+    }
+
+  }
+
+
+
+  function updateCompareButton() {
+
+    const btn = document.getElementById("compare-btn");
+
+    const count = selectedBots.size;
+
+    btn.textContent = `📊 Compare (${count})`;
+
+    btn.disabled = count === 0;
+
+  }
+
+
+
+  function openCompareModal() {
+
+    renderCompareContent();
+
+    document.getElementById("compare-modal").style.display = "flex";
+
+  }
+
+
+
+  function closeCompareModal() {
+
+    document.getElementById("compare-modal").style.display = "none";
+
+  }
+
+
+
+  function renderCompareContent() {
+
+    if (!latestTelemetryData.bots) return;
+
+    const table = document.getElementById("metrics-table");
+
+    const posGrid = document.getElementById("compare-positions-grid");
+
+
+
+    const botsToCompare = Array.from(selectedBots).filter(k => latestTelemetryData.bots[k]);
+
+    if (botsToCompare.length === 0) {
+
+      closeCompareModal();
+
+      return;
+
+    }
+
+
+
+    // Render Table Header
+
+    let theadHtml = `<tr><th>Metric</th>`;
+
+    botsToCompare.forEach(k => {
+
+      theadHtml += `<th>🤖 ${k}</th>`;
+
+    });
+
+    theadHtml += `</tr>`;
+
+    table.querySelector("thead").innerHTML = theadHtml;
+
+
+
+    // Table Metrics Rows
+
+    const rows = [
+
+      { label: "Status", get: d => d.is_running ? "<span style='color:#38ef7d;font-weight:bold;'>RUNNING</span>" : "<span style='color:#ff4e50;font-weight:bold;'>OFFLINE</span>" },
+
+      { label: "Runtime", get: d => d.runtime || "--" },
+
+      { label: "Balance", get: d => `$${Number(d.balance).toFixed(2)}` },
+
+      { label: "Open PnL", get: d => `<span style="color:${d.open_pnl >= 0 ? '#38ef7d' : '#ff4e50'};font-weight:bold;">${d.open_pnl >= 0 ? '+' : ''}$${Number(d.open_pnl).toFixed(2)}</span>` },
+
+      { label: "Realized PnL", get: d => d.stats ? `<span style="color:${d.stats.realized_pnl >= 0 ? '#38ef7d' : '#ff4e50'};font-weight:bold;">${d.stats.realized_pnl >= 0 ? '+' : ''}$${Number(d.stats.realized_pnl).toFixed(2)}</span>` : "--" },
+
+      { label: "Win Rate", get: d => d.stats ? `${d.stats.win_rate}% (${d.stats.wins}W / ${d.stats.losses}L)` : "--" },
+
+      { label: "Starting Capital", get: d => d.milestones ? `$${Number(d.milestones.starting_capital).toFixed(2)}` : "--" },
+
+      { label: "+50% Milestones", get: d => d.milestones ? `<span style="color:#e3b341;font-weight:bold;">${d.milestones.half_times}x</span>` : "--" },
+
+      { label: "2x Milestones", get: d => d.milestones ? `<span style="color:#e3b341;font-weight:bold;">${d.milestones.double_times}x</span>` : "--" },
+
+      { label: "Open Trades Count", get: d => d.trades ? d.trades.length : 0 }
+
+    ];
+
+
+
+    let tbodyHtml = "";
+
+    rows.forEach(r => {
+
+      tbodyHtml += `<tr><td><strong>${r.label}</strong></td>`;
+
+      botsToCompare.forEach(k => {
+
+        tbodyHtml += `<td>${r.get(latestTelemetryData.bots[k])}</td>`;
+
+      });
+
+      tbodyHtml += `</tr>`;
+
+    });
+
+    table.querySelector("tbody").innerHTML = tbodyHtml;
+
+
+
+    // Render Coins Side by Side
+
+    posGrid.innerHTML = "";
+
+    botsToCompare.forEach(k => {
+
+      const bData = latestTelemetryData.bots[k];
+
+      const col = document.createElement("div");
+
+      col.className = "bot-column";
+
+
+
+      let tradesHtml = "";
+
+      if (bData.trades && bData.trades.length > 0) {
+
+        bData.trades.forEach(t => {
+
+          tradesHtml += `
+
+            <div class="trade-item">
+
+              <div>
+
+                <strong>${t.symbol}</strong>
+
+                <span style="color:#8b949e; font-size:11px; margin-left:6px;">(${t.state || "OPEN"})</span>
+
+              </div>
+
+              <div style="font-weight:bold; color:${t.pnl >= 0 ? '#38ef7d' : '#ff4e50'};">
+
+                ${t.pnl >= 0 ? '+' : ''}$${Number(t.pnl).toFixed(2)}
+
+              </div>
+
+            </div>
+
+          `;
+
+        });
+
+      } else {
+
+        tradesHtml = `<p style="color:#8b949e; font-size:12px; padding: 6px 0;">No active coins open.</p>`;
+
+      }
+
+
+
+      col.innerHTML = `
+
+        <div class="bot-column-header">
+
+          <span>🤖 ${k}</span>
+
+          <span style="font-size:11px; color:#8b949e;">${bData.trades ? bData.trades.length : 0} Positions</span>
+
+        </div>
+
+        <div>${tradesHtml}</div>
+
+      `;
+
+      posGrid.appendChild(col);
+
+    });
+
+  }
 
 
 
@@ -133,7 +471,13 @@
 
       <div class="card-header">
 
-        <div class="bot-name">🤖 ${botKey}</div>
+        <div class="header-left">
+
+          <input type="checkbox" class="select-checkbox" id="chk-${botKey}" onchange="toggleBotSelection('${botKey}')" />
+
+          <div class="bot-name">🤖 ${botKey}</div>
+
+        </div>
 
         <div class="header-tags">
 
@@ -435,6 +779,8 @@
 
       statusEl.style.color = "#38ef7d";
 
+      latestTelemetryData = data;
+
 
 
       if (data.bots) {
@@ -444,6 +790,12 @@
           updateBotCard(botKey, botData);
 
         });
+
+        if (document.getElementById("compare-modal").style.display === "flex") {
+
+          renderCompareContent();
+
+        }
 
       }
 
