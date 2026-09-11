@@ -109,7 +109,7 @@
 
 
 
-    /* Persistent Compare Tab Styles */
+    /* Compare Tab Styles */
 
     .compare-wrapper { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
 
@@ -187,7 +187,7 @@
 
         <p>No bots selected for comparison yet.</p>
 
-        <p style="font-size: 12px; margin-top: 6px;">Check the checkbox next to any bot on the Overview tab to preserve and view coins here.</p>
+        <p style="font-size: 12px; margin-top: 6px;">Select one or more checkboxes on the Overview tab to preserve and compare bots here across reloads.</p>
 
       </div>
 
@@ -251,7 +251,7 @@
 
   const targetPnL = {};
 
-  const selectedBots = new Set();
+  let selectedBots = new Set();
 
   let latestTelemetryData = {};
 
@@ -261,9 +261,65 @@
 
 
 
-  function switchTab(tabName) {
+  // Load persistent state from localStorage
+
+  function loadStoredState() {
+
+    try {
+
+      const savedBots = localStorage.getItem("selectedBots");
+
+      if (savedBots) {
+
+        selectedBots = new Set(JSON.parse(savedBots));
+
+        document.getElementById("compare-count").textContent = selectedBots.size;
+
+      }
+
+      const savedTab = localStorage.getItem("activeTab");
+
+      if (savedTab === "compare" || savedTab === "overview") {
+
+        switchTab(savedTab, false);
+
+      }
+
+    } catch (e) {
+
+      console.warn("Storage load error:", e);
+
+    }
+
+  }
+
+
+
+  function saveStoredState() {
+
+    try {
+
+      localStorage.setItem("selectedBots", JSON.stringify(Array.from(selectedBots)));
+
+      localStorage.setItem("activeTab", activeTab);
+
+    } catch (e) {
+
+      console.warn("Storage save error:", e);
+
+    }
+
+  }
+
+
+
+  function switchTab(tabName, shouldSave = true) {
 
     activeTab = tabName;
+
+    if (shouldSave) saveStoredState();
+
+
 
     document.getElementById("tab-btn-overview").className = "tab-btn " + (tabName === "overview" ? "active" : "");
 
@@ -300,6 +356,10 @@
     }
 
     document.getElementById("compare-count").textContent = selectedBots.size;
+
+    saveStoredState();
+
+
 
     if (activeTab === "compare") {
 
@@ -848,6 +908,8 @@
 
 
   window.onload = () => {
+
+    loadStoredState();
 
     fetchAllBots();
 
