@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
@@ -33,15 +32,27 @@
 
 
 
-    /* Persistent Tab Navigation */
+    /* Tab Bar Navigation */
 
-    .tab-bar { display: flex; gap: 8px; border-bottom: 1px solid #30363d; padding-bottom: 8px; margin-top: 4px; }
+    .tab-bar-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #30363d; padding-bottom: 8px; gap: 10px; overflow-x: auto; }
 
-    .tab-btn { background: #0d1117; color: #8b949e; border: 1px solid #30363d; padding: 8px 16px; border-radius: 6px; font-family: inherit; font-size: 13px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+    .tab-bar { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; }
+
+    .tab-btn { background: #0d1117; color: #8b949e; border: 1px solid #30363d; padding: 8px 14px; border-radius: 6px; font-family: inherit; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: all 0.2s; }
 
     .tab-btn.active { background: #238636; color: #ffffff; border-color: #2ea043; }
 
     .tab-btn:hover:not(.active) { background: #161b22; color: #f0f6fc; }
+
+    .tab-close { background: transparent; border: none; color: inherit; font-size: 14px; cursor: pointer; line-height: 1; padding: 0 2px; }
+
+    .tab-close:hover { color: #ff4e50; }
+
+
+
+    .btn-add-tab { background: #21262d; border: 1px dashed #30363d; color: #58a6ff; padding: 8px 12px; border-radius: 6px; font-family: inherit; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; }
+
+    .btn-add-tab:hover { background: #30363d; color: #79c0ff; }
 
 
 
@@ -59,11 +70,7 @@
 
     .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #21262d; padding-bottom: 10px; }
 
-    .header-left { display: flex; align-items: center; gap: 10px; }
-
     .bot-name { font-size: 18px; font-weight: bold; color: #ffffff; }
-
-    .select-checkbox { transform: scale(1.25); cursor: pointer; accent-color: #238636; }
 
     .header-tags { display: flex; align-items: center; gap: 8px; }
 
@@ -109,9 +116,19 @@
 
 
 
-    /* Compare Tab Styles */
+    /* Compare View Styles */
 
     .compare-wrapper { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+
+    .selector-bar { display: flex; flex-wrap: wrap; gap: 10px; background: #0d1117; border: 1px solid #21262d; padding: 12px; border-radius: 6px; align-items: center; }
+
+    .selector-label { font-size: 11px; font-weight: bold; color: #8b949e; margin-right: 6px; text-transform: uppercase; }
+
+    .bot-checkbox-pill { display: flex; align-items: center; gap: 6px; background: #161b22; border: 1px solid #30363d; padding: 4px 10px; border-radius: 4px; font-size: 12px; color: #f0f6fc; cursor: pointer; user-select: none; }
+
+    .bot-checkbox-pill input { accent-color: #238636; cursor: pointer; }
+
+
 
     .compare-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 
@@ -129,7 +146,7 @@
 
     .bot-column-header { font-weight: bold; color: #f0f6fc; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #21262d; display: flex; justify-content: space-between; }
 
-    .empty-state { text-align: center; padding: 40px 16px; color: #8b949e; font-size: 13px; }
+    .empty-state { text-align: center; padding: 30px 16px; color: #8b949e; font-size: 13px; }
 
   </style>
 
@@ -155,19 +172,19 @@
 
 
 
-  <!-- Tab Selector -->
+  <div class="tab-bar-container">
 
-  <div class="tab-bar">
+    <div class="tab-bar" id="tab-buttons-container">
 
-    <button id="tab-btn-overview" class="tab-btn active" onclick="switchTab('overview')">📋 Overview</button>
+      <button id="tab-btn-overview" class="tab-btn active" onclick="switchTab('overview')">📋 Overview</button>
 
-    <button id="tab-btn-compare" class="tab-btn" onclick="switchTab('compare')">📊 Compare Bots (<span id="compare-count">0</span>)</button>
+    </div>
+
+    <button class="btn-add-tab" onclick="addNewCompareTab()">+ New Compare Tab</button>
 
   </div>
 
 
-
-  <!-- Tab 1: Overview Panel -->
 
   <div id="panel-overview" class="view-panel active">
 
@@ -177,65 +194,7 @@
 
 
 
-  <!-- Tab 2: Persistent Compare Panel -->
-
-  <div id="panel-compare" class="view-panel">
-
-    <div class="compare-wrapper">
-
-      <div id="compare-empty-msg" class="empty-state">
-
-        <p>No bots selected for comparison yet.</p>
-
-        <p style="font-size: 12px; margin-top: 6px;">Select one or more checkboxes on the Overview tab to preserve and compare bots here across reloads.</p>
-
-      </div>
-
-
-
-      <div id="compare-active-content" style="display: none; flex-direction: column; gap: 20px;">
-
-        <div>
-
-          <div class="section-title">Core Performance Metrics</div>
-
-          <div style="overflow-x:auto;">
-
-            <table class="compare-table" id="metrics-table">
-
-              <thead>
-
-                <tr>
-
-                  <th>Metric</th>
-
-                </tr>
-
-              </thead>
-
-              <tbody></tbody>
-
-            </table>
-
-          </div>
-
-        </div>
-
-
-
-        <div>
-
-          <div class="section-title">Active Coin Positions Breakdown</div>
-
-          <div id="compare-positions-grid" class="positions-grid"></div>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </div>
+  <div id="compare-panels-mount"></div>
 
 </div>
 
@@ -251,43 +210,49 @@
 
   const targetPnL = {};
 
-  let selectedBots = new Set();
-
   let latestTelemetryData = {};
-
-  let activeTab = "overview";
 
   const maxPoints = 28;
 
 
 
-  // Load persistent state from localStorage
+  let compareTabs = [];
 
-  function loadStoredState() {
+  let activeTabId = "overview";
+
+
+
+  function loadSavedState() {
 
     try {
 
-      const savedBots = localStorage.getItem("selectedBots");
+      const savedTabs = localStorage.getItem("compareTabs");
 
-      if (savedBots) {
+      if (savedTabs) {
 
-        selectedBots = new Set(JSON.parse(savedBots));
+        compareTabs = JSON.parse(savedTabs);
 
-        document.getElementById("compare-count").textContent = selectedBots.size;
+      } else {
+
+        compareTabs = [{ id: 1, name: "Compare 1", selectedBots: [] }];
 
       }
 
-      const savedTab = localStorage.getItem("activeTab");
 
-      if (savedTab === "compare" || savedTab === "overview") {
 
-        switchTab(savedTab, false);
+      const savedActive = localStorage.getItem("activeTabId");
+
+      if (savedActive) {
+
+        activeTabId = savedActive;
 
       }
 
     } catch (e) {
 
-      console.warn("Storage load error:", e);
+      compareTabs = [{ id: 1, name: "Compare 1", selectedBots: [] }];
+
+      activeTabId = "overview";
 
     }
 
@@ -295,13 +260,13 @@
 
 
 
-  function saveStoredState() {
+  function saveState() {
 
     try {
 
-      localStorage.setItem("selectedBots", JSON.stringify(Array.from(selectedBots)));
+      localStorage.setItem("compareTabs", JSON.stringify(compareTabs));
 
-      localStorage.setItem("activeTab", activeTab);
+      localStorage.setItem("activeTabId", activeTabId);
 
     } catch (e) {
 
@@ -313,29 +278,83 @@
 
 
 
-  function switchTab(tabName, shouldSave = true) {
+  function addNewCompareTab() {
 
-    activeTab = tabName;
+    const nextId = compareTabs.length > 0 ? Math.max(...compareTabs.map(t => t.id)) + 1 : 1;
 
-    if (shouldSave) saveStoredState();
+    compareTabs.push({ id: nextId, name: `Compare ${nextId}`, selectedBots: [] });
 
+    activeTabId = `compare-${nextId}`;
 
+    saveState();
 
-    document.getElementById("tab-btn-overview").className = "tab-btn " + (tabName === "overview" ? "active" : "");
+    renderTabs();
 
-    document.getElementById("tab-btn-compare").className = "tab-btn " + (tabName === "compare" ? "active" : "");
+    switchTab(activeTabId);
 
-    
-
-    document.getElementById("panel-overview").className = "view-panel " + (tabName === "overview" ? "active" : "");
-
-    document.getElementById("panel-compare").className = "view-panel " + (tabName === "compare" ? "active" : "");
+  }
 
 
 
-    if (tabName === "compare") {
+  function removeCompareTab(id, event) {
 
-      renderCompareContent();
+    event.stopPropagation();
+
+    if (compareTabs.length <= 1) {
+
+      alert("At least one comparison tab must be kept.");
+
+      return;
+
+    }
+
+    compareTabs = compareTabs.filter(t => t.id !== id);
+
+    if (activeTabId === `compare-${id}`) {
+
+      activeTabId = "overview";
+
+    }
+
+    saveState();
+
+    renderTabs();
+
+    switchTab(activeTabId);
+
+  }
+
+
+
+  function switchTab(tabId) {
+
+    activeTabId = tabId;
+
+    saveState();
+
+
+
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+
+      btn.classList.toggle("active", btn.id === `tab-btn-${tabId}`);
+
+    });
+
+
+
+    document.querySelectorAll(".view-panel").forEach(panel => {
+
+      panel.classList.toggle("active", panel.id === `panel-${tabId}`);
+
+    });
+
+
+
+    if (tabId.startsWith("compare-")) {
+
+      const cId = parseInt(tabId.replace("compare-", ""), 10);
+
+      renderCompareView(cId);
 
     }
 
@@ -343,51 +362,205 @@
 
 
 
-  function toggleBotSelection(botKey) {
+  function renderTabs() {
 
-    if (selectedBots.has(botKey)) {
+    const bar = document.getElementById("tab-buttons-container");
 
-      selectedBots.delete(botKey);
+    const overviewBtn = document.getElementById("tab-btn-overview");
+
+    bar.innerHTML = "";
+
+    bar.appendChild(overviewBtn);
+
+
+
+    const mount = document.getElementById("compare-panels-mount");
+
+    mount.innerHTML = "";
+
+
+
+    compareTabs.forEach(t => {
+
+      const btn = document.createElement("button");
+
+      btn.id = `tab-btn-compare-${t.id}`;
+
+      btn.className = "tab-btn " + (activeTabId === `compare-${t.id}` ? "active" : "");
+
+      btn.onclick = () => switchTab(`compare-${t.id}`);
+
+      btn.innerHTML = `
+
+        <span>📊 ${t.name} (${t.selectedBots.length})</span>
+
+        <span class="tab-close" onclick="removeCompareTab(${t.id}, event)">&times;</span>
+
+      `;
+
+      bar.appendChild(btn);
+
+
+
+      const panel = document.createElement("div");
+
+      panel.id = `panel-compare-${t.id}`;
+
+      panel.className = "view-panel " + (activeTabId === `compare-${t.id}` ? "active" : "");
+
+      panel.innerHTML = `
+
+        <div class="compare-wrapper">
+
+          <div class="selector-bar" id="selector-bar-${t.id}">
+
+            <span class="selector-label">Select Bots for ${t.name}:</span>
+
+            <div id="bot-pills-${t.id}" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+
+          </div>
+
+          <div id="compare-empty-${t.id}" class="empty-state">
+
+            <p>No bots selected for this tab.</p>
+
+            <p style="font-size: 12px; margin-top: 6px;">Select one or more bots above to pin their active coins and metrics here.</p>
+
+          </div>
+
+          <div id="compare-content-${t.id}" style="display:none; flex-direction:column; gap:20px;">
+
+            <div>
+
+              <div class="section-title">Core Performance Metrics</div>
+
+              <div style="overflow-x:auto;">
+
+                <table class="compare-table" id="metrics-table-${t.id}">
+
+                  <thead><tr><th>Metric</th></tr></thead>
+
+                  <tbody></tbody>
+
+                </table>
+
+              </div>
+
+            </div>
+
+            <div>
+
+              <div class="section-title">Active Coin Positions Breakdown</div>
+
+              <div id="positions-grid-${t.id}" class="positions-grid"></div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      `;
+
+      mount.appendChild(panel);
+
+    });
+
+
+
+    if (activeTabId.startsWith("compare-")) {
+
+      const currentId = parseInt(activeTabId.replace("compare-", ""), 10);
+
+      renderCompareView(currentId);
+
+    }
+
+  }
+
+
+
+  function toggleBotInTab(tabId, botKey) {
+
+    const tab = compareTabs.find(t => t.id === tabId);
+
+    if (!tab) return;
+
+
+
+    if (tab.selectedBots.includes(botKey)) {
+
+      tab.selectedBots = tab.selectedBots.filter(b => b !== botKey);
 
     } else {
 
-      selectedBots.add(botKey);
+      tab.selectedBots.push(botKey);
 
     }
 
-    document.getElementById("compare-count").textContent = selectedBots.size;
-
-    saveStoredState();
 
 
+    saveState();
 
-    if (activeTab === "compare") {
+    renderTabs();
 
-      renderCompareContent();
-
-    }
+    renderCompareView(tabId);
 
   }
 
 
 
-  function renderCompareContent() {
+  function renderCompareView(tabId) {
 
-    if (!latestTelemetryData.bots) return;
+    const tab = compareTabs.find(t => t.id === tabId);
 
-    const count = selectedBots.size;
-
-    const emptyMsg = document.getElementById("compare-empty-msg");
-
-    const activeContent = document.getElementById("compare-active-content");
+    if (!tab || !latestTelemetryData.bots) return;
 
 
 
-    if (count === 0) {
+    const pillContainer = document.getElementById(`bot-pills-${tabId}`);
 
-      emptyMsg.style.display = "block";
+    if (pillContainer) {
 
-      activeContent.style.display = "none";
+      pillContainer.innerHTML = "";
+
+      Object.keys(latestTelemetryData.bots).forEach(botKey => {
+
+        const isChecked = tab.selectedBots.includes(botKey);
+
+        const label = document.createElement("label");
+
+        label.className = "bot-checkbox-pill";
+
+        label.innerHTML = `
+
+          <input type="checkbox" ${isChecked ? "checked" : ""} onchange="toggleBotInTab(${tabId}, '${botKey}')" />
+
+          <span>🤖 ${botKey}</span>
+
+        `;
+
+        pillContainer.appendChild(label);
+
+      });
+
+    }
+
+
+
+    const emptyBox = document.getElementById(`compare-empty-${tabId}`);
+
+    const contentBox = document.getElementById(`compare-content-${tabId}`);
+
+    const validSelected = tab.selectedBots.filter(k => latestTelemetryData.bots[k]);
+
+
+
+    if (validSelected.length === 0) {
+
+      if (emptyBox) emptyBox.style.display = "block";
+
+      if (contentBox) contentBox.style.display = "none";
 
       return;
 
@@ -395,153 +568,147 @@
 
 
 
-    emptyMsg.style.display = "none";
+    if (emptyBox) emptyBox.style.display = "none";
 
-    activeContent.style.display = "flex";
+    if (contentBox) contentBox.style.display = "flex";
 
 
 
-    const table = document.getElementById("metrics-table");
+    const table = document.getElementById(`metrics-table-${tabId}`);
 
-    const posGrid = document.getElementById("compare-positions-grid");
+    if (table) {
 
-    const botsToCompare = Array.from(selectedBots).filter(k => latestTelemetryData.bots[k]);
+      let theadHtml = `<tr><th>Metric</th>`;
 
+      validSelected.forEach(k => { theadHtml += `<th>🤖 ${k}</th>`; });
 
+      theadHtml += `</tr>`;
 
-    // Render Table Header
+      table.querySelector("thead").innerHTML = theadHtml;
 
-    let theadHtml = `<tr><th>Metric</th>`;
 
-    botsToCompare.forEach(k => {
 
-      theadHtml += `<th>🤖 ${k}</th>`;
+      const rows = [
 
-    });
+        { label: "Status", get: d => d.is_running ? "<span style='color:#38ef7d;font-weight:bold;'>RUNNING</span>" : "<span style='color:#ff4e50;font-weight:bold;'>OFFLINE</span>" },
 
-    theadHtml += `</tr>`;
+        { label: "Runtime", get: d => d.runtime || "--" },
 
-    table.querySelector("thead").innerHTML = theadHtml;
+        { label: "Balance", get: d => `$${Number(d.balance).toFixed(2)}` },
 
+        { label: "Open PnL", get: d => `<span style="color:${d.open_pnl >= 0 ? '#38ef7d' : '#ff4e50'};font-weight:bold;">${d.open_pnl >= 0 ? '+' : ''}$${Number(d.open_pnl).toFixed(2)}</span>` },
 
+        { label: "Realized PnL", get: d => d.stats ? `<span style="color:${d.stats.realized_pnl >= 0 ? '#38ef7d' : '#ff4e50'};font-weight:bold;">${d.stats.realized_pnl >= 0 ? '+' : ''}$${Number(d.stats.realized_pnl).toFixed(2)}</span>` : "--" },
 
-    // Metrics Rows
+        { label: "Win Rate", get: d => d.stats ? `${d.stats.win_rate}% (${d.stats.wins}W / ${d.stats.losses}L)` : "--" },
 
-    const rows = [
+        { label: "Starting Capital", get: d => d.milestones ? `$${Number(d.milestones.starting_capital).toFixed(2)}` : "--" },
 
-      { label: "Status", get: d => d.is_running ? "<span style='color:#38ef7d;font-weight:bold;'>RUNNING</span>" : "<span style='color:#ff4e50;font-weight:bold;'>OFFLINE</span>" },
+        { label: "+50% Milestones", get: d => d.milestones ? `<span style="color:#e3b341;font-weight:bold;">${d.milestones.half_times}x</span>` : "--" },
 
-      { label: "Runtime", get: d => d.runtime || "--" },
+        { label: "2x Milestones", get: d => d.milestones ? `<span style="color:#e3b341;font-weight:bold;">${d.milestones.double_times}x</span>` : "--" },
 
-      { label: "Balance", get: d => `$${Number(d.balance).toFixed(2)}` },
+        { label: "Active Coins Count", get: d => d.trades ? d.trades.length : 0 }
 
-      { label: "Open PnL", get: d => `<span style="color:${d.open_pnl >= 0 ? '#38ef7d' : '#ff4e50'};font-weight:bold;">${d.open_pnl >= 0 ? '+' : ''}$${Number(d.open_pnl).toFixed(2)}</span>` },
+      ];
 
-      { label: "Realized PnL", get: d => d.stats ? `<span style="color:${d.stats.realized_pnl >= 0 ? '#38ef7d' : '#ff4e50'};font-weight:bold;">${d.stats.realized_pnl >= 0 ? '+' : ''}$${Number(d.stats.realized_pnl).toFixed(2)}</span>` : "--" },
 
-      { label: "Win Rate", get: d => d.stats ? `${d.stats.win_rate}% (${d.stats.wins}W / ${d.stats.losses}L)` : "--" },
 
-      { label: "Starting Capital", get: d => d.milestones ? `$${Number(d.milestones.starting_capital).toFixed(2)}` : "--" },
+      let tbodyHtml = "";
 
-      { label: "+50% Milestones", get: d => d.milestones ? `<span style="color:#e3b341;font-weight:bold;">${d.milestones.half_times}x</span>` : "--" },
+      rows.forEach(r => {
 
-      { label: "2x Milestones", get: d => d.milestones ? `<span style="color:#e3b341;font-weight:bold;">${d.milestones.double_times}x</span>` : "--" },
+        tbodyHtml += `<tr><td><strong>${r.label}</strong></td>`;
 
-      { label: "Active Coins Count", get: d => d.trades ? d.trades.length : 0 }
+        validSelected.forEach(k => {
 
-    ];
-
-
-
-    let tbodyHtml = "";
-
-    rows.forEach(r => {
-
-      tbodyHtml += `<tr><td><strong>${r.label}</strong></td>`;
-
-      botsToCompare.forEach(k => {
-
-        tbodyHtml += `<td>${r.get(latestTelemetryData.bots[k])}</td>`;
-
-      });
-
-      tbodyHtml += `</tr>`;
-
-    });
-
-    table.querySelector("tbody").innerHTML = tbodyHtml;
-
-
-
-    // Render Coins Side by Side
-
-    posGrid.innerHTML = "";
-
-    botsToCompare.forEach(k => {
-
-      const bData = latestTelemetryData.bots[k];
-
-      const col = document.createElement("div");
-
-      col.className = "bot-column";
-
-
-
-      let tradesHtml = "";
-
-      if (bData.trades && bData.trades.length > 0) {
-
-        bData.trades.forEach(t => {
-
-          tradesHtml += `
-
-            <div class="trade-item">
-
-              <div>
-
-                <strong>${t.symbol}</strong>
-
-                <span style="color:#8b949e; font-size:11px; margin-left:6px;">(${t.state || "OPEN"})</span>
-
-              </div>
-
-              <div style="font-weight:bold; color:${t.pnl >= 0 ? '#38ef7d' : '#ff4e50'};">
-
-                ${t.pnl >= 0 ? '+' : ''}$${Number(t.pnl).toFixed(2)}
-
-              </div>
-
-            </div>
-
-          `;
+          tbodyHtml += `<td>${r.get(latestTelemetryData.bots[k])}</td>`;
 
         });
 
-      } else {
+        tbodyHtml += `</tr>`;
 
-        tradesHtml = `<p style="color:#8b949e; font-size:12px; padding: 6px 0;">No active coins open.</p>`;
+      });
 
-      }
+      table.querySelector("tbody").innerHTML = tbodyHtml;
+
+    }
 
 
 
-      col.innerHTML = `
+    const posGrid = document.getElementById(`positions-grid-${tabId}`);
 
-        <div class="bot-column-header">
+    if (posGrid) {
 
-          <span>🤖 ${k}</span>
+      posGrid.innerHTML = "";
 
-          <span style="font-size:11px; color:#8b949e;">${bData.trades ? bData.trades.length : 0} Positions</span>
+      validSelected.forEach(k => {
 
-        </div>
+        const bData = latestTelemetryData.bots[k];
 
-        <div>${tradesHtml}</div>
+        const col = document.createElement("div");
 
-      `;
+        col.className = "bot-column";
 
-      posGrid.appendChild(col);
 
-    });
+
+        let tradesHtml = "";
+
+        if (bData.trades && bData.trades.length > 0) {
+
+          bData.trades.forEach(t => {
+
+            tradesHtml += `
+
+              <div class="trade-item">
+
+                <div>
+
+                  <strong>${t.symbol}</strong>
+
+                  <span style="color:#8b949e; font-size:11px; margin-left:6px;">(${t.state || "OPEN"})</span>
+
+                </div>
+
+                <div style="font-weight:bold; color:${t.pnl >= 0 ? '#38ef7d' : '#ff4e50'};">
+
+                  ${t.pnl >= 0 ? '+' : ''}$${Number(t.pnl).toFixed(2)}
+
+                </div>
+
+              </div>
+
+            `;
+
+          });
+
+        } else {
+
+          tradesHtml = `<p style="color:#8b949e; font-size:12px; padding: 6px 0;">No active coins open.</p>`;
+
+        }
+
+
+
+        col.innerHTML = `
+
+          <div class="bot-column-header">
+
+            <span>🤖 ${k}</span>
+
+            <span style="font-size:11px; color:#8b949e;">${bData.trades ? bData.trades.length : 0} Positions</span>
+
+          </div>
+
+          <div>${tradesHtml}</div>
+
+        `;
+
+        posGrid.appendChild(col);
+
+      });
+
+    }
 
   }
 
@@ -561,13 +728,7 @@
 
       <div class="card-header">
 
-        <div class="header-left">
-
-          <input type="checkbox" class="select-checkbox" id="chk-${botKey}" onchange="toggleBotSelection('${botKey}')" />
-
-          <div class="bot-name">🤖 ${botKey}</div>
-
-        </div>
+        <div class="bot-name">🤖 ${botKey}</div>
 
         <div class="header-tags">
 
@@ -581,7 +742,7 @@
 
       <div id="milestones-${botKey}" class="milestone-banner">
 
-        <span>Capital: <strong id="cap-${botKey}">/data/data/com.termux/files/usr/bin/bash.00</strong></span>
+        <span>Capital: <strong id="cap-${botKey}">$0.00</strong></span>
 
         <span>+50% Milestone: <span id="half-${botKey}" class="milestone-highlight">0</span></span>
 
@@ -684,12 +845,6 @@
       createBotCardDOM(botKey);
 
     }
-
-
-
-    const chk = document.getElementById(`chk-${botKey}`);
-
-    if (chk) chk.checked = selectedBots.has(botKey);
 
 
 
@@ -887,9 +1042,13 @@
 
         });
 
-        if (activeTab === "compare") {
 
-          renderCompareContent();
+
+        if (activeTabId.startsWith("compare-")) {
+
+          const currentId = parseInt(activeTabId.replace("compare-", ""), 10);
+
+          renderCompareView(currentId);
 
         }
 
@@ -909,7 +1068,11 @@
 
   window.onload = () => {
 
-    loadStoredState();
+    loadSavedState();
+
+    renderTabs();
+
+    switchTab(activeTabId);
 
     fetchAllBots();
 
@@ -924,4 +1087,3 @@
 </body>
 
 </html>
-
